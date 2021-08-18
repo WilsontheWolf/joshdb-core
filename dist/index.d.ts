@@ -111,11 +111,11 @@ interface FilterPayload<Value = unknown> extends Payload, Payload.OptionalData<R
     inputHook?: FilterHook<Value>;
     path?: string[];
 }
-interface FilterByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.Data<Record<string, Value | null>> {
+interface FilterByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.Data<Record<string, Value>> {
     inputData: Value;
     path?: string[];
 }
-interface FilterByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<Record<string, Value | null>> {
+interface FilterByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<Record<string, Value>> {
     inputHook: FilterHook<Value>;
     path?: string[];
 }
@@ -289,7 +289,7 @@ declare class Josh<Value = unknown> {
     find<CustomValue = Value>(hook: FindHook<CustomValue>, path?: string[]): Promise<CustomValue | null>;
     get<CustomValue = Value>(keyPath: KeyPath): Promise<CustomValue | null>;
     getAll<CustomValue = Value, K extends keyof ReturnBulk<CustomValue> = Bulk.Object>(returnBulkType?: K): Promise<ReturnBulk<CustomValue>[K]>;
-    getMany<CustomValue = Value, K extends keyof ReturnBulk<CustomValue> = Bulk.Object>(keyPaths: KeyPathArray[], returnBulkType?: K): Promise<ReturnBulk<CustomValue>[K]>;
+    getMany<CustomValue = Value, K extends keyof ReturnBulk<CustomValue> = Bulk.Object>(keyPaths: KeyPathArray[], returnBulkType?: K): Promise<ReturnBulk<CustomValue | null>[K]>;
     has(keyPath: KeyPath): Promise<boolean>;
     inc(keyPath: KeyPath): Promise<this>;
     keys(): Promise<string[]>;
@@ -304,9 +304,9 @@ declare class Josh<Value = unknown> {
     update<CustomValue = Value>(keyPath: KeyPath, inputDataOrHook: CustomValue | UpdateHook<CustomValue>): Promise<CustomValue | null>;
     values<CustomValue = Value>(): Promise<CustomValue[]>;
     init(): Promise<this>;
-    use(name: BuiltInMiddleware): this;
-    protected convertBulkData<CustomValue = Value, K extends keyof ReturnBulk<CustomValue> = Bulk.Object>(data: ReturnBulk<CustomValue>[Bulk.Object], returnBulkType?: K): ReturnBulk<CustomValue>[K];
-    protected getKeyPath(keyPath: KeyPath): [string, string[] | undefined];
+    use(name: string): this;
+    private convertBulkData;
+    private getKeyPath;
     static multi<Instances extends Record<string, Josh> = Record<string, Josh>>(names: string[], options?: Omit<Josh.Options, 'name'>): Instances;
 }
 declare namespace Josh {
@@ -334,15 +334,15 @@ declare enum Bulk {
     OneDimensionalArray = 2,
     TwoDimensionalArray = 3
 }
-interface ReturnBulk<T = unknown> {
-    [Bulk.Object]: Record<string, T | null>;
-    [Bulk.Map]: Map<string, T | null>;
-    [Bulk.OneDimensionalArray]: (T | null)[];
-    [Bulk.TwoDimensionalArray]: [string, T | null][];
-    [K: string]: Record<string, T | null> | Map<string, T | null> | (T | null)[] | [string, T | null][];
+interface ReturnBulk<Value = unknown> {
+    [Bulk.Object]: Record<string, Value>;
+    [Bulk.Map]: Map<string, Value>;
+    [Bulk.OneDimensionalArray]: Value[];
+    [Bulk.TwoDimensionalArray]: [string, Value][];
+    [K: string]: Record<string, Value> | Map<string, Value> | Value[] | [string, Value][];
 }
-interface MiddlewareContextData<T = unknown> {
-    [BuiltInMiddleware.AutoEnsure]?: AutoEnsureContext<T>;
+interface MiddlewareContextData<Value = unknown> {
+    [BuiltInMiddleware.AutoEnsure]?: AutoEnsureContext<Value>;
     [K: string]: Middleware.Context | undefined;
 }
 
