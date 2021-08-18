@@ -1,0 +1,64 @@
+{
+	"name": "@joshdb/core",
+	"version": "2.0.0",
+	"description": "JavaScript Object Storage Helper",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"author": "Evelyne Lachance <eslachance@gmail.com> (https://evie.codes/)",
+	"license": "Apache-2.0",
+	"private": false,
+	"scripts": {
+		"lint": "eslint src tests scripts --ext mjs,ts --fix",
+		"format": "prettier --write {src,tests,scripts}/**/*.{mjs,ts}",
+		"test": "jest --verbose",
+		"test:watch": "jest --verbose --watch",
+		"update": "yarn upgrade-interactive --latest",
+		"clean": "node scripts/clean-dist.mjs",
+		"build": "tsc -b src && rollup -c scripts/rollup.bundle.ts",
+		"watch": "tsc -b src -w",
+		"commit": "git-cz --disable-emoji",
+		"prepublishOnly": "rollup-type-bundler"
+	},
+	"dependencies": {
+		"@realware/utilities": "^1.0.1",
+		"@sapphire/pieces": "^2.1.0",
+		"@sapphire/stopwatch": "^1.1.4",
+		"@sapphire/utilities": "^2.0.1"
+	},
+	"devDependencies": {
+		"@favware/rollup-type-bundler": "^1.0.3",
+		"@sapphire/eslint-config": "^3.2.3",
+		"@sapphire/ts-config": "^3.0.0",
+		"@types/jest": "^27.0.1",
+		"@types/node": "^16.6.1",
+		"eslint": "^7.32.0",
+		"jest": "^27.0.6",
+		"jest-circus": "^27.0.6",
+		"prettier": "^2.3.2",
+		"rollup": "^2.56.2",
+		"rollup-plugin-version-injector": "^1.3.3",
+		"ts-jest": "^27.0.4",
+		"ts-node": "^10.2.0",
+		"typescript": "^4.3.5"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/eslachance/josh"
+	},
+	"files": [
+		"dist",
+		"!dist/*.tsbuildinfo"
+	],
+	"engines": {
+		"node": ">=16",
+		"npm": ">=6"
+	},
+	"keywords": [],
+	"bugs": {
+		"url": "https://github.com/eslachance/josh/issues"
+	},
+	"homepage": "https://github.com/eslachance/josh",
+	"publishConfig": {
+		"access": "public"
+	}
+}

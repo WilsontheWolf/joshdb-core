@@ -1,0 +1,1 @@
+{"version":3,"file":"JoshProviderError.js","sourceRoot":"","sources":["../../../src/lib/errors/JoshProviderError.ts"],"names":[],"mappings":";;;AACA,2CAAwC;AAExC,MAAa,iBAAkB,SAAQ,qBAAS;IAG/C,YAAmB,OAAkC;QACpD,KAAK,CAAC,OAAO,CAAC,CAAC;QAEf,IAAI,CAAC,MAAM,GAAG,OAAO,CAAC,MAAM,CAAC;IAC9B,CAAC;IAED,IAAW,IAAI;QACd,OAAO,mBAAmB,CAAC;IAC5B,CAAC;CACD;AAZD,8CAYC"}
