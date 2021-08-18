@@ -92,119 +92,148 @@ declare namespace Payload {
 }
 
 interface AutoKeyPayload extends Payload, Payload.Data<string> {
+    method: Method.AutoKey;
 }
 
 interface DecPayload extends Payload, Payload.KeyPath, Payload.OptionalData<number> {
+    method: Method.Dec;
 }
 
 interface DeletePayload extends Payload, Payload.KeyPath {
+    method: Method.Delete;
 }
 
 interface EnsurePayload<Value = unknown> extends Payload, Payload.Data<Value> {
+    method: Method.Ensure;
     key: string;
     defaultValue: Value;
 }
 
 interface FilterPayload<Value = unknown> extends Payload, Payload.OptionalData<Record<string, Value | null>> {
+    method: Method.Filter;
     type: Payload.Type;
     inputData?: Value;
     inputHook?: FilterHook<Value>;
     path?: string[];
 }
 interface FilterByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.Data<Record<string, Value>> {
+    method: Method.Filter;
     inputData: Value;
     path?: string[];
 }
 interface FilterByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<Record<string, Value>> {
+    method: Method.Filter;
     inputHook: FilterHook<Value>;
     path?: string[];
 }
 declare type FilterHook<Value = unknown> = (data: Value) => Awaited<Value>;
 
 interface FindPayload<Value = unknown> extends Payload, Payload.OptionalData<Value> {
+    method: Method.Find;
     type: Payload.Type;
     inputData?: Value;
     inputHook?: FindHook<Value>;
     path?: string[];
 }
 interface FindByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.OptionalData<Value> {
+    method: Method.Find;
     inputData: Value;
     path?: string[];
 }
 interface FindByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.OptionalData<Value> {
+    method: Method.Find;
     inputHook: FindHook<Value>;
     path?: string[];
 }
 declare type FindHook<Value = unknown> = (data: Value) => Awaited<boolean>;
 
 interface GetPayload<Value = unknown> extends Payload, Payload.KeyPath, Payload.OptionalData<Value> {
+    method: Method.Get;
 }
 
 interface GetAllPayload<Value = unknown> extends Payload, Payload.Data<Record<string, Value>> {
+    method: Method.GetAll;
 }
 
 interface GetManyPayload<Value = unknown> extends Payload, Payload.Data<Record<string, Value | null>> {
+    method: Method.GetMany;
     keyPaths: KeyPathArray[];
 }
 
 interface HasPayload extends Payload, Payload.KeyPath, Payload.Data<boolean> {
+    method: Method.Has;
 }
 
 interface IncPayload extends Payload, Payload.KeyPath, Payload.OptionalData<number> {
+    method: Method.Inc;
 }
 
 interface KeysPayload extends Payload, Payload.Data<string[]> {
+    method: Method.Keys;
 }
 
 interface PushPayload extends Payload, Payload.KeyPath {
+    method: Method.Push;
 }
 
 interface RandomPayload<Value = unknown> extends Payload, Payload.OptionalData<Value> {
+    method: Method.Random;
 }
 
 interface RandomKeyPayload extends Payload, Partial<Payload.Data<string>> {
+    method: Method.RandomKey;
 }
 
 interface SetPayload extends Payload, Payload.KeyPath {
+    method: Method.Set;
 }
 
 interface SetManyPayload extends Payload {
+    method: Method.SetMany;
     keyPaths: KeyPathArray[];
 }
 
 interface SizePayload extends Payload, Payload.Data<number> {
+    method: Method.Size;
 }
 
 interface SomePayload<Value = unknown> extends Payload, Payload.Data<boolean> {
+    method: Method.Some;
     type: Payload.Type;
     inputData?: Value;
     inputHook?: SomeHook<Value>;
     path?: string[];
 }
 interface SomeByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.Data<boolean> {
+    method: Method.Some;
     inputData: Value;
     path?: string[];
 }
 interface SomeByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<boolean> {
+    method: Method.Some;
     inputHook: SomeHook<Value>;
     path?: string[];
 }
 declare type SomeHook<Value = unknown> = (data: Value) => Awaited<boolean>;
 
 interface UpdatePayload<Value = unknown> extends Payload, Payload.KeyPath, Payload.OptionalData<Value> {
+    method: Method.Update;
     type: Payload.Type;
     inputData?: Value;
     inputHook?: UpdateHook<Value>;
 }
 interface UpdateByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.KeyPath, Payload.OptionalData<Value> {
+    method: Method.Update;
     inputData: Value;
 }
 interface UpdateByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.KeyPath, Payload.OptionalData<Value> {
+    method: Method.Update;
     inputHook: UpdateHook<Value>;
 }
 declare type UpdateHook<Value = unknown> = (currentData: Value) => Awaited<Value>;
 
 interface ValuesPayload<Value = unknown> extends Payload, Payload.Data<Value[]> {
+    method: Method.Values;
 }
 
 declare class MiddlewareStore<Value = unknown> extends Store<Middleware> {
