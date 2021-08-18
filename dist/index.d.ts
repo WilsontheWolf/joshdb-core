@@ -16,9 +16,6 @@ declare namespace JoshError {
     }
 }
 
-/**
- * The built-in middlewares for Josh
- */
 declare enum BuiltInMiddleware {
     AutoEnsure = "autoEnsure"
 }
