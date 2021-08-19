@@ -180,7 +180,7 @@ interface RandomPayload<Value = unknown> extends Payload, Payload.OptionalData<V
     method: Method.Random;
 }
 
-interface RandomKeyPayload extends Payload, Partial<Payload.Data<string>> {
+interface RandomKeyPayload extends Payload, Payload.OptionalData<string> {
     method: Method.RandomKey;
 }
 
