@@ -96,6 +96,9 @@ class Middleware extends pieces_1.Piece {
     [types_1.Method.Values](payload) {
         return payload;
     }
+    run(payload) {
+        return payload;
+    }
     toJSON() {
         return { ...super.toJSON(), position: this.position, conditions: this.conditions, use: this.use };
     }

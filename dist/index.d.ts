@@ -914,6 +914,7 @@ declare abstract class Middleware<Context extends Middleware.Context = Middlewar
     [Method.Update]<Value = unknown>(payload: UpdateByDataPayload<Value>): Awaited<UpdateByDataPayload<Value>>;
     [Method.Update]<Value = unknown>(payload: UpdateByHookPayload<Value>): Awaited<UpdateByHookPayload<Value>>;
     [Method.Values]<Value = unknown>(payload: ValuesPayload<Value>): Awaited<ValuesPayload<Value>>;
+    run<P extends Payload>(payload: P): Awaited<unknown>;
     toJSON(): Record<string, any>;
     /**
      * Retrieve this middleware'es context data from the Josh instance.
