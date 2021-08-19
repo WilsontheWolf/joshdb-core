@@ -1,1 +1,1 @@
-{"version":3,"file":"MapProviderError.js","sourceRoot":"","sources":["../../../../src/lib/structures/defaultProvider/MapProviderError.ts"],"names":[],"mappings":";;;AAAA,yCAAiD;AAEjD,MAAa,gBAAiB,SAAQ,0BAAiB;IACtD,IAAW,IAAI;QACd,OAAO,kBAAkB,CAAC;IAC3B,CAAC;CACD;AAJD,4CAIC"}
+{"version":3,"file":"MapProviderError.js","sourceRoot":"","sources":["../../../../src/lib/structures/defaultProvider/MapProviderError.ts"],"names":[],"mappings":";;;AAAA,yCAAiD;AAEjD;;;GAGG;AACH,MAAa,gBAAiB,SAAQ,0BAAiB;IACtD;;OAEG;IACH,IAAW,IAAI;QACd,OAAO,kBAAkB,CAAC;IAC3B,CAAC;CACD;AAPD,4CAOC"}

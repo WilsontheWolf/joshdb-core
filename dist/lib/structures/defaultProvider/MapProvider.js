@@ -7,10 +7,23 @@ const utilities_2 = require("@sapphire/utilities");
 const types_1 = require("../../types");
 const JoshProvider_1 = require("../JoshProvider");
 const MapProviderError_1 = require("./MapProviderError");
+/**
+ * A provider that uses the Node.js native [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) class.
+ * @since 2.0.0
+ */
 class MapProvider extends JoshProvider_1.JoshProvider {
     constructor() {
         super(...arguments);
+        /**
+         * The [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) cache to store data.
+         * @since 2.0.0
+         * @private
+         */
         this.cache = new Map();
+        /**
+         * A simple cache for the {@link MapProvider.autoKey} method.
+         * @since 2.0.0
+         */
         this.autoKeyCount = 0;
     }
     autoKey(payload) {

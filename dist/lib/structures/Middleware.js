@@ -4,6 +4,22 @@ exports.Middleware = void 0;
 const pieces_1 = require("@sapphire/pieces");
 const JoshError_1 = require("../errors/JoshError");
 const types_1 = require("../types");
+/**
+ * The base class piece for creating middlewares. Extend this piece to create a middleware.
+ * @see {@link Middleware.Options} for all available options for middlewares.
+ * @since 2.0.0
+ *
+ * @example
+ * ```typescript
+ * (at)ApplyOptions<MiddlewareOptions>({
+ *   name: 'middleware',
+ *   // More options...
+ * })
+ * export class CoreMiddleware extends Middleware {
+ *   // Make method implementations...
+ * }
+ * ```
+ */
 class Middleware extends pieces_1.Piece {
     constructor(context, options = {}) {
         super(context, options);
@@ -83,13 +99,26 @@ class Middleware extends pieces_1.Piece {
     toJSON() {
         return { ...super.toJSON(), position: this.position, conditions: this.conditions, use: this.use };
     }
+    /**
+     * Retrieve this middleware'es context data from the Josh instance.
+     * @since 2.0.0
+     * @returns The context or `undefined`
+     */
     getContext() {
         const contextData = this.instance.options.middlewareContextData ?? {};
         return Reflect.get(contextData, this.name);
     }
+    /**
+     * Get this middleware's Josh instance.
+     * @since 2.0.0
+     */
     get instance() {
         return this.store.instance;
     }
+    /**
+     * Get this middleware's provider instance.
+     * @since 2.0.0
+     */
     get provider() {
         return this.instance.provider;
     }
