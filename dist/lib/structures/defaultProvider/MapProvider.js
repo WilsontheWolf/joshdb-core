@@ -271,6 +271,99 @@ class MapProvider extends JoshProvider_1.JoshProvider {
         payload.data = keys[Math.floor(Math.random() * keys.length)];
         return payload;
     }
+    removeByData(payload) {
+        const { key, path, inputData } = payload;
+        const { data } = this.get({ method: types_1.Method.Get, key });
+        if (data === undefined) {
+            payload.error = new MapProviderError_1.MapProviderError({
+                identifier: MapProvider.Identifiers.RemoveMissingData,
+                message: `The data at "${key}" does not exist.`,
+                method: types_1.Method.Remove
+            });
+        }
+        if (!path) {
+            if (!Array.isArray(data)) {
+                payload.error = new MapProviderError_1.MapProviderError({
+                    identifier: MapProvider.Identifiers.RemoveInvalidType,
+                    message: `The data at "${key}" must be an array.`,
+                    method: types_1.Method.Remove
+                });
+                return payload;
+            }
+            this.set({ method: types_1.Method.Set, key }, data.filter((d) => d !== inputData));
+            return payload;
+        }
+        const array = utilities_1.getFromObject(data, path);
+        if (array === undefined) {
+            payload.error = new MapProviderError_1.MapProviderError({
+                identifier: MapProvider.Identifiers.RemoveMissingData,
+                message: `The data at "${key}.${path.join('.')}" does not exist.`,
+                method: types_1.Method.Remove
+            });
+            return payload;
+        }
+        if (!Array.isArray(array)) {
+            payload.error = new MapProviderError_1.MapProviderError({
+                identifier: MapProvider.Identifiers.RemoveInvalidType,
+                message: `The data at "${key}.${path.join('.')} must be an array.`,
+                method: types_1.Method.Remove
+            });
+            return payload;
+        }
+        this.set({ method: types_1.Method.Set, key, path }, array.filter((d) => d !== inputData));
+        return payload;
+    }
+    async removeByHook(payload) {
+        const { key, path, inputHook } = payload;
+        let { data } = this.get({ method: types_1.Method.Get, key });
+        if (data === undefined) {
+            payload.error = new MapProviderError_1.MapProviderError({
+                identifier: MapProvider.Identifiers.RemoveMissingData,
+                message: `The data at "${key}" does not exist.`,
+                method: types_1.Method.Remove
+            });
+            return payload;
+        }
+        if (!path) {
+            if (!Array.isArray(data)) {
+                payload.error = new MapProviderError_1.MapProviderError({
+                    identifier: MapProvider.Identifiers.RemoveInvalidType,
+                    message: `The data at "${key}" must be an array.`,
+                    method: types_1.Method.Remove
+                });
+                return payload;
+            }
+            // @ts-expect-error 2339
+            for (const value of data)
+                if (await inputHook(value))
+                    data = data.filter((v) => v !== value);
+            this.set({ method: types_1.Method.Set, key }, data);
+            return payload;
+        }
+        let array = utilities_1.getFromObject(data, path);
+        if (array === undefined) {
+            payload.error = new MapProviderError_1.MapProviderError({
+                identifier: MapProvider.Identifiers.RemoveMissingData,
+                message: `The data at "${key}.${path.join('.')}" does not exist.`,
+                method: types_1.Method.Remove
+            });
+            return payload;
+        }
+        if (!Array.isArray(array)) {
+            payload.error = new MapProviderError_1.MapProviderError({
+                identifier: MapProvider.Identifiers.RemoveInvalidType,
+                message: `The data at "${key}.${path.join('.')} must be an array.`,
+                method: types_1.Method.Remove
+            });
+            return payload;
+        }
+        // @ts-expect-error 2339
+        for (const value of array)
+            if (await inputHook(value))
+                array = array.filter((v) => v !== value);
+        this.set({ method: types_1.Method.Set, key, path }, array);
+        return payload;
+    }
     set(payload, value) {
         const { key, path } = payload;
         if (path) {
@@ -359,6 +452,8 @@ exports.MapProvider = MapProvider;
         Identifiers["IncMissingData"] = "incMissingData";
         Identifiers["PushInvalidType"] = "pushInvalidType";
         Identifiers["PushMissingData"] = "pushMissingData";
+        Identifiers["RemoveInvalidType"] = "removeInvalidType";
+        Identifiers["RemoveMissingData"] = "removeMissingData";
         Identifiers["SetMissingData"] = "setMissingData";
     })(Identifiers = MapProvider.Identifiers || (MapProvider.Identifiers = {}));
 })(MapProvider = exports.MapProvider || (exports.MapProvider = {}));

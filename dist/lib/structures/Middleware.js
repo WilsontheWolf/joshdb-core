@@ -81,6 +81,9 @@ class Middleware extends pieces_1.Piece {
     [types_1.Method.RandomKey](payload) {
         return payload;
     }
+    [types_1.Method.Remove](payload) {
+        return payload;
+    }
     [types_1.Method.Set](payload) {
         return payload;
     }

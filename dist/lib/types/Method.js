@@ -20,6 +20,7 @@ var Method;
     Method["Push"] = "push";
     Method["Random"] = "random";
     Method["RandomKey"] = "randomKey";
+    Method["Remove"] = "remove";
     Method["Set"] = "set";
     Method["SetMany"] = "setMany";
     Method["Size"] = "size";

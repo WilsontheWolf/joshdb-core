@@ -80,6 +80,7 @@ declare enum Method {
     Push = "push",
     Random = "random",
     RandomKey = "randomKey",
+    Remove = "remove",
     Set = "set",
     SetMany = "setMany",
     Size = "size",
@@ -680,6 +681,87 @@ interface RandomKeyPayload extends Payload, Payload.OptionalData<string> {
 }
 
 /**
+ * The union payload for {@link Method.Remove}
+ * @see {@link Payload}
+ * @see {@link Payload.KeyPath}
+ * @since 2.0.0
+ */
+interface RemovePayload<Value = unknown> extends Payload, Payload.KeyPath {
+    /**
+     * The method for this payload.
+     * @since 2.0.0
+     */
+    method: Method.Remove;
+    /**
+     * The type for this payload.
+     * @since 2.0.0
+     */
+    type: Payload.Type.Data | Payload.Type.Hook;
+    /**
+     * The input data for this payload.
+     * @since 2.0.0
+     */
+    inputData?: Value;
+    /**
+     * The input hook for this payload.
+     * @since 2.0.0
+     */
+    inputHook?: RemoveHook<Value>;
+}
+/**
+ * The data payload for {@link Method.Remove}
+ * @see {@link Payload}
+ * @see {@link Payload.ByData}
+ * @see {@link Payload.KeyPath}
+ * @since 2.0.0
+ */
+interface RemoveByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.KeyPath {
+    /**
+     * The method for this payload.
+     * @since 2.0.0
+     */
+    method: Method.Remove;
+    /**
+     * The type for this payload.
+     * @since 2.0.0
+     */
+    type: Payload.Type.Data;
+    /**
+     * The input data for this payload.
+     * @since 2.0.0
+     */
+    inputData: Value;
+}
+/**
+ * The hook payload for {@link Method.Remove}
+ * @see {@link Payload}
+ * @see {@link Payload.ByHook}
+ * @see {@link Payload.KeyPath}
+ */
+interface RemoveByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.KeyPath {
+    /**
+     * The method for this payload.
+     * @since 2.0.0
+     */
+    method: Method.Remove;
+    /**
+     * The type for this payload.
+     * @since 2.0.0
+     */
+    type: Payload.Type.Hook;
+    /**
+     * The input hook for this payload.
+     * @since 2.0.0
+     */
+    inputHook: RemoveHook<Value>;
+}
+/**
+ * The hook for {@link RemoveByHookPayload}
+ * @since 2.0.0
+ */
+declare type RemoveHook<Value = unknown> = (data: Value) => Awaited<boolean>;
+
+/**
  * The payload for {@link Method.Set}
  * @see {@link Payload}
  * @see {@link Payload.KeyPath}
@@ -829,7 +911,7 @@ interface UpdatePayload<Value = unknown> extends Payload, Payload.KeyPath, Paylo
      * The type for this payload.
      * @since 2.0.0
      */
-    type: Payload.Type;
+    type: Payload.Type.Data | Payload.Type.Hook;
     /**
      * The input data for this payload.
      * @since 2.0.0
@@ -883,6 +965,7 @@ interface UpdateByHookPayload<Value = unknown> extends Payload, Payload.ByHook, 
 }
 /**
  * The hook for {@link UpdateByHookPayload}
+ * @since 2.0.0
  */
 declare type UpdateHook<Value = unknown> = (currentData: Value) => Awaited<Value>;
 
@@ -989,6 +1072,8 @@ declare abstract class Middleware<Context extends Middleware.Context = Middlewar
     [Method.Push](payload: PushPayload): Awaited<PushPayload>;
     [Method.Random]<Value = unknown>(payload: RandomPayload<Value>): Awaited<RandomPayload<Value>>;
     [Method.RandomKey](payload: RandomKeyPayload): Awaited<RandomKeyPayload>;
+    [Method.Remove]<Value = unknown>(payload: RemoveByDataPayload<Value>): Awaited<RemoveByDataPayload<Value>>;
+    [Method.Remove]<Value = unknown>(payload: RemoveByHookPayload<Value>): Awaited<RemoveByHookPayload<Value>>;
     [Method.Set](payload: SetPayload): Awaited<SetPayload>;
     [Method.SetMany](payload: SetManyPayload): Awaited<SetManyPayload>;
     [Method.Size](payload: SizePayload): Awaited<SizePayload>;
@@ -1382,6 +1467,7 @@ declare class Josh<Value = unknown> {
      * @returns The random key or `null`.
      */
     randomKey(): Promise<string | null>;
+    remove<CustomValue = Value>(keyPath: KeyPath, inputDataOrHook: CustomValue | RemoveHook<CustomValue>): Promise<this>;
     /**
      * Set data at a specific key/path.
      * @since 2.0.0
@@ -1750,6 +1836,18 @@ declare abstract class JoshProvider<Value = unknown> {
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
+    abstract removeByData<CustomValue = Value>(payload: RemoveByDataPayload<CustomValue>): Awaited<RemoveByDataPayload<CustomValue>>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
+    abstract removeByHook<CustomValue = Value>(payload: RemoveByHookPayload<CustomValue>): Awaited<RemoveByHookPayload<CustomValue>>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
     abstract set<CustomValue = Value>(payload: SetPayload, value: CustomValue): Awaited<SetPayload>;
     /**
      * @since 2.0.0
@@ -1868,6 +1966,8 @@ declare class MapProvider<Value = unknown> extends JoshProvider<Value> {
     push<CustomValue = Value>(payload: PushPayload, value: CustomValue): PushPayload;
     random<CustomValue = Value>(payload: RandomPayload<CustomValue>): RandomPayload<CustomValue>;
     randomKey(payload: RandomKeyPayload): RandomKeyPayload;
+    removeByData<CustomValue = Value>(payload: RemoveByDataPayload<CustomValue>): RemoveByDataPayload<CustomValue>;
+    removeByHook<CustomValue = Value>(payload: RemoveByHookPayload<CustomValue>): Promise<RemoveByHookPayload<CustomValue>>;
     set<CustomValue = Value>(payload: SetPayload, value: CustomValue): SetPayload;
     setMany<CustomValue = Value>(payload: SetManyPayload, value: CustomValue): SetManyPayload;
     size(payload: SizePayload): SizePayload;
@@ -1886,6 +1986,8 @@ declare namespace MapProvider {
         IncMissingData = "incMissingData",
         PushInvalidType = "pushInvalidType",
         PushMissingData = "pushMissingData",
+        RemoveInvalidType = "removeInvalidType",
+        RemoveMissingData = "removeMissingData",
         SetMissingData = "setMissingData"
     }
 }
@@ -1963,4 +2065,4 @@ declare function isUpdateByHookPayload<Value = unknown>(payload: UpdatePayload<V
 
 declare const version = "[VI]{version}[/VI]";
 
-export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, DecPayload, DeletePayload, EnsurePayload, FilterByDataPayload, FilterByHookPayload, FilterHook, FilterPayload, FindByDataPayload, FindByHookPayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, Payload, PushPayload, RandomKeyPayload, RandomPayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByDataPayload, SomeByHookPayload, SomeHook, SomePayload, Trigger, UpdateByDataPayload, UpdateByHookPayload, UpdateHook, UpdatePayload, ValuesPayload, isFilterByDataPayload, isFilterByHookPayload, isFindByDataPayload, isFindByHookPayload, isSomeByDataPayload, isSomeByHookPayload, isUpdateByDataPayload, isUpdateByHookPayload, version };
+export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, DecPayload, DeletePayload, EnsurePayload, FilterByDataPayload, FilterByHookPayload, FilterHook, FilterPayload, FindByDataPayload, FindByHookPayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByDataPayload, RemoveByHookPayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByDataPayload, SomeByHookPayload, SomeHook, SomePayload, Trigger, UpdateByDataPayload, UpdateByHookPayload, UpdateHook, UpdatePayload, ValuesPayload, isFilterByDataPayload, isFilterByHookPayload, isFindByDataPayload, isFindByHookPayload, isSomeByDataPayload, isSomeByHookPayload, isUpdateByDataPayload, isUpdateByHookPayload, version };

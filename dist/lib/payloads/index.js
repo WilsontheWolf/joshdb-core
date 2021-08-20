@@ -18,6 +18,7 @@ tslib_1.__exportStar(require("./Payload"), exports);
 tslib_1.__exportStar(require("./Push"), exports);
 tslib_1.__exportStar(require("./Random"), exports);
 tslib_1.__exportStar(require("./RandomKey"), exports);
+tslib_1.__exportStar(require("./Remove"), exports);
 tslib_1.__exportStar(require("./Set"), exports);
 tslib_1.__exportStar(require("./SetMany"), exports);
 tslib_1.__exportStar(require("./Size"), exports);
