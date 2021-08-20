@@ -1,5 +1,4 @@
 import { PieceOptions, Store, Piece, PieceContext } from '@sapphire/pieces';
-import { Stopwatch } from '@sapphire/stopwatch';
 import { Awaited } from '@sapphire/utilities';
 
 /**
@@ -140,11 +139,6 @@ interface Payload {
      * @since 2.0.0
      */
     trigger?: Trigger;
-    /**
-     * The stopwatch to be used in the provider.
-     * @since 2.0.0
-     */
-    stopwatch?: Stopwatch;
     /**
      * The error for this payload.
      * @since 2.0.0
