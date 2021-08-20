@@ -253,6 +253,24 @@ class MapProvider extends JoshProvider_1.JoshProvider {
         payload.stopwatch.stop();
         return payload;
     }
+    mapByPath(payload) {
+        payload.stopwatch = new stopwatch_1.Stopwatch();
+        payload.stopwatch.start();
+        const { path } = payload;
+        for (const key of this.keys({ method: types_1.Method.Keys, data: [] }).data)
+            payload.data.push(this.get({ method: types_1.Method.Get, key, path }).data);
+        payload.stopwatch.stop();
+        return payload;
+    }
+    async mapByHook(payload) {
+        payload.stopwatch = new stopwatch_1.Stopwatch();
+        payload.stopwatch.start();
+        const { hook } = payload;
+        for (const value of this.values({ method: types_1.Method.Values, data: [] }).data)
+            payload.data.push(await hook(value));
+        payload.stopwatch.stop();
+        return payload;
+    }
     push(payload, value) {
         payload.stopwatch = new stopwatch_1.Stopwatch();
         payload.stopwatch.start();

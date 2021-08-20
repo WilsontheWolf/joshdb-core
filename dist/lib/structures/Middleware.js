@@ -69,6 +69,9 @@ class Middleware extends pieces_1.Piece {
     [types_1.Method.Keys](payload) {
         return payload;
     }
+    [types_1.Method.Map](payload) {
+        return payload;
+    }
     [types_1.Method.Push](payload) {
         return payload;
     }

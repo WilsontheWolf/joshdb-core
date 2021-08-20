@@ -19,6 +19,11 @@ var Payload;
          * @since 2.0.0
          */
         Type["Hook"] = "HOOK";
+        /**
+         * The path type.
+         * @since 2.0.0
+         */
+        Type["Path"] = "PATH";
     })(Type = Payload.Type || (Payload.Type = {}));
 })(Payload = exports.Payload || (exports.Payload = {}));
 //# sourceMappingURL=Payload.js.map

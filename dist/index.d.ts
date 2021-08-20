@@ -77,6 +77,7 @@ declare enum Method {
     Inc = "inc",
     Init = "init",
     Keys = "keys",
+    Map = "map",
     Push = "push",
     Random = "random",
     RandomKey = "randomKey",
@@ -207,6 +208,16 @@ declare namespace Payload {
         type: Type.Hook;
     }
     /**
+     * The byPath extension for {@link Payload}
+     */
+    interface ByPath {
+        /**
+         * The type for this extension
+         * @since 2.0.0
+         */
+        type: Type.Path;
+    }
+    /**
      * The type enum for {@link Payload}.
      * @since 2.0.0
      */
@@ -220,7 +231,12 @@ declare namespace Payload {
          * The hook type.
          * @since 2.0.0
          */
-        Hook = "HOOK"
+        Hook = "HOOK",
+        /**
+         * The path type.
+         * @since 2.0.0
+         */
+        Path = "PATH"
     }
 }
 
@@ -555,6 +571,77 @@ interface KeysPayload extends Payload, Payload.Data<string[]> {
      */
     method: Method.Keys;
 }
+
+/**
+ * The union payload for {@link Method.Map}
+ * @see {@link Payload}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface MapPayload<Value = unknown> extends Payload, Payload.Data<Value[]> {
+    /**
+     * The method for this payload.
+     *  @since 2.0.0
+     */
+    method: Method.Map;
+    /**
+     *  The type for this payload.
+     *  @since 2.0.0
+     */
+    type: Payload.Type.Path | Payload.Type.Hook;
+    /**
+     * The path for this payload.
+     *  @since 2.0.0
+     */
+    path?: string[];
+    /**
+     * The hook for this payload.
+     *  @since 2.0.0
+     */ hook?: MapHook<Value>;
+}
+/**
+ *  The path payload for {@link Method.Map}
+ *  @see {@link Payload}
+ *  @see {@link Payload.ByPath}
+ *  @see {@link Payload.Data}
+ *  @since 2.0.0
+ */
+interface MapByPathPayload<Value = unknown> extends Payload, Payload.ByPath, Payload.Data<Value[]> {
+    /**
+     * The method for this payload.
+     * @since 2.0.0
+     */
+    method: Method.Map;
+    /**
+     *  The path for this payload.
+     * @since 2.0.0
+     */
+    path: string[];
+}
+/**
+ * The hook payload for {@link Method.Map}
+ * @see {@link Payload}
+ * @see {@link Payload.ByHook}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface MapByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<Value[]> {
+    /**
+     * The method for this payload.
+     * @since 2.0.0
+     */
+    method: Method.Map;
+    /**
+     * The hook for this payload.
+     * @since 2.0.0
+     */
+    hook: MapHook<Value>;
+}
+/**
+ * The hook for {@link MapByHookPayload}
+ * @since 2.0.0
+ */
+declare type MapHook<Value = unknown> = (data: Value) => Awaited<Value>;
 
 /**
  * The payload for {@link Method.Push}
@@ -903,6 +990,8 @@ declare abstract class Middleware<Context extends Middleware.Context = Middlewar
     [Method.Has](payload: HasPayload): Awaited<HasPayload>;
     [Method.Inc](payload: IncPayload): Awaited<IncPayload>;
     [Method.Keys](payload: KeysPayload): Awaited<KeysPayload>;
+    [Method.Map]<Value = unknown>(payload: MapByPathPayload<Value>): Awaited<MapByPathPayload<Value>>;
+    [Method.Map]<Value = unknown>(payload: MapByHookPayload<Value>): Awaited<MapByHookPayload<Value>>;
     [Method.Push](payload: PushPayload): Awaited<PushPayload>;
     [Method.Random]<Value = unknown>(payload: RandomPayload<Value>): Awaited<RandomPayload<Value>>;
     [Method.RandomKey](payload: RandomKeyPayload): Awaited<RandomKeyPayload>;
@@ -1266,6 +1355,20 @@ declare class Josh<Value = unknown> {
      */
     keys(): Promise<string[]>;
     /**
+     * Map all stored data to an array.
+     * @since 2.0.0
+     * @param pathOrHook A path array or hook function.
+     * @returns The mapped data.
+     *
+     * @example
+     * ```typescript
+     * await josh.setMany([['key', []], ['anotherKey', []]], { path: 'value' });
+     *
+     * await josh.map((data) => data.path); // ['value', 'value']
+     * ```
+     */
+    map<CustomValue = Value>(pathOrHook: string[] | MapHook<CustomValue>): Promise<CustomValue[]>;
+    /**
      * Push a value to an array at a specific key/value.
      * @since 2.0.0
      * @param keyPath The key/path to the array for pushing.
@@ -1623,6 +1726,18 @@ declare abstract class JoshProvider<Value = unknown> {
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
+    abstract mapByPath<CustomValue = Value>(payload: MapByPathPayload<CustomValue>): Awaited<MapByPathPayload<CustomValue>>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
+    abstract mapByHook<CustomValue = Value>(payload: MapByHookPayload<CustomValue>): Awaited<MapByHookPayload<CustomValue>>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
     abstract push<CustomValue = Value>(payload: PushPayload, value: CustomValue): Awaited<PushPayload>;
     /**
      * @since 2.0.0
@@ -1754,6 +1869,8 @@ declare class MapProvider<Value = unknown> extends JoshProvider<Value> {
     has(payload: HasPayload): HasPayload;
     inc(payload: IncPayload): IncPayload;
     keys(payload: KeysPayload): KeysPayload;
+    mapByPath<CustomValue = Value>(payload: MapByPathPayload<CustomValue>): MapByPathPayload<CustomValue>;
+    mapByHook<CustomValue = Value>(payload: MapByHookPayload<CustomValue>): Promise<MapByHookPayload<CustomValue>>;
     push<CustomValue = Value>(payload: PushPayload, value: CustomValue): PushPayload;
     random<CustomValue = Value>(payload: RandomPayload<CustomValue>): RandomPayload<CustomValue>;
     randomKey(payload: RandomKeyPayload): RandomKeyPayload;
@@ -1852,4 +1969,4 @@ declare function isUpdateByHookPayload<Value = unknown>(payload: UpdatePayload<V
 
 declare const version = "[VI]{version}[/VI]";
 
-export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, DecPayload, DeletePayload, EnsurePayload, FilterByDataPayload, FilterByHookPayload, FilterHook, FilterPayload, FindByDataPayload, FindByHookPayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, Payload, PushPayload, RandomKeyPayload, RandomPayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByDataPayload, SomeByHookPayload, SomeHook, SomePayload, Trigger, UpdateByDataPayload, UpdateByHookPayload, UpdateHook, UpdatePayload, ValuesPayload, isFilterByDataPayload, isFilterByHookPayload, isFindByDataPayload, isFindByHookPayload, isSomeByDataPayload, isSomeByHookPayload, isUpdateByDataPayload, isUpdateByHookPayload, version };
+export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, DecPayload, DeletePayload, EnsurePayload, FilterByDataPayload, FilterByHookPayload, FilterHook, FilterPayload, FindByDataPayload, FindByHookPayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, Payload, PushPayload, RandomKeyPayload, RandomPayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByDataPayload, SomeByHookPayload, SomeHook, SomePayload, Trigger, UpdateByDataPayload, UpdateByHookPayload, UpdateHook, UpdatePayload, ValuesPayload, isFilterByDataPayload, isFilterByHookPayload, isFindByDataPayload, isFindByHookPayload, isSomeByDataPayload, isSomeByHookPayload, isUpdateByDataPayload, isUpdateByHookPayload, version };

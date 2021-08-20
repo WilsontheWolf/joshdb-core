@@ -13,6 +13,7 @@ tslib_1.__exportStar(require("./GetMany"), exports);
 tslib_1.__exportStar(require("./Has"), exports);
 tslib_1.__exportStar(require("./Inc"), exports);
 tslib_1.__exportStar(require("./Keys"), exports);
+tslib_1.__exportStar(require("./Map"), exports);
 tslib_1.__exportStar(require("./Payload"), exports);
 tslib_1.__exportStar(require("./Push"), exports);
 tslib_1.__exportStar(require("./Random"), exports);

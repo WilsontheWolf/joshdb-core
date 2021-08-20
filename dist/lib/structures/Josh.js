@@ -543,6 +543,51 @@ class Josh {
         return payload.data;
     }
     /**
+     * Map all stored data to an array.
+     * @since 2.0.0
+     * @param pathOrHook A path array or hook function.
+     * @returns The mapped data.
+     *
+     * @example
+     * ```typescript
+     * await josh.setMany([['key', []], ['anotherKey', []]], { path: 'value' });
+     *
+     * await josh.map((data) => data.path); // ['value', 'value']
+     * ```
+     */
+    async map(pathOrHook) {
+        if (utilities_1.isFunction(pathOrHook)) {
+            let payload = { method: types_1.Method.Map, type: payloads_1.Payload.Type.Hook, hook: pathOrHook, data: [] };
+            for (const middleware of this.middlewares.array())
+                await middleware.run(payload);
+            const preMiddlewares = this.middlewares.filterByCondition(types_1.Method.Map, types_1.Trigger.PreProvider);
+            for (const middleware of preMiddlewares)
+                payload = await middleware[types_1.Method.Map](payload);
+            payload = await this.provider.mapByHook(payload);
+            payload.trigger = types_1.Trigger.PostProvider;
+            for (const middleware of this.middlewares.array())
+                await middleware.run(payload);
+            const postMiddlewares = this.middlewares.filterByCondition(types_1.Method.Map, types_1.Trigger.PostProvider);
+            for (const middleware of postMiddlewares)
+                payload = await middleware[types_1.Method.Map](payload);
+            return payload.data;
+        }
+        let payload = { method: types_1.Method.Map, type: payloads_1.Payload.Type.Path, path: pathOrHook, data: [] };
+        for (const middleware of this.middlewares.array())
+            await middleware.run(payload);
+        const preMiddlewares = this.middlewares.filterByCondition(types_1.Method.Map, types_1.Trigger.PreProvider);
+        for (const middleware of preMiddlewares)
+            payload = await middleware[types_1.Method.Map](payload);
+        payload = await this.provider.mapByPath(payload);
+        payload.trigger = types_1.Trigger.PostProvider;
+        for (const middleware of this.middlewares.array())
+            await middleware.run(payload);
+        const postMiddlewares = this.middlewares.filterByCondition(types_1.Method.Map, types_1.Trigger.PostProvider);
+        for (const middleware of postMiddlewares)
+            payload = await middleware[types_1.Method.Map](payload);
+        return payload.data;
+    }
+    /**
      * Push a value to an array at a specific key/value.
      * @since 2.0.0
      * @param keyPath The key/path to the array for pushing.
