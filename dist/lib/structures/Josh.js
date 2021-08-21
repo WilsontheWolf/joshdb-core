@@ -213,6 +213,63 @@ class Josh {
             payload = await middleware[types_1.Method.Ensure](payload);
         return payload.data;
     }
+    async every(pathOrHook, pathOrValue) {
+        if (Array.isArray(pathOrHook)) {
+            if (pathOrValue === undefined)
+                throw new errors_1.JoshError({
+                    identifier: Josh.Identifiers.EveryMissingValue,
+                    message: 'The "value" parameter is required when using every by data.'
+                });
+            let payload = {
+                method: types_1.Method.Every,
+                trigger: types_1.Trigger.PreProvider,
+                type: payloads_1.Payload.Type.Data,
+                path: pathOrHook,
+                inputData: pathOrValue,
+                data: true
+            };
+            for (const middleware of this.middlewares.array())
+                await middleware.run(payload);
+            const preMiddlewares = this.middlewares.filterByCondition(types_1.Method.Every, types_1.Trigger.PreProvider);
+            for (const middleware of preMiddlewares)
+                payload = await middleware[types_1.Method.Every](payload);
+            payload = await this.provider.everyByData(payload);
+            payload.trigger = types_1.Trigger.PostProvider;
+            if (payload.error)
+                throw payload.error;
+            for (const middleware of this.middlewares.array())
+                await middleware.run(payload);
+            const postMiddlewares = this.middlewares.filterByCondition(types_1.Method.Every, types_1.Trigger.PostProvider);
+            for (const middleware of postMiddlewares)
+                payload = await middleware[types_1.Method.Every](payload);
+            return payload.data;
+        }
+        if (pathOrValue !== undefined && !Array.isArray(pathOrValue))
+            throw new errors_1.JoshError({ identifier: Josh.Identifiers.EveryInvalidPath, message: 'The path parameter must be an array of strings.' });
+        let payload = {
+            method: types_1.Method.Every,
+            trigger: types_1.Trigger.PreProvider,
+            type: payloads_1.Payload.Type.Hook,
+            path: pathOrValue,
+            inputHook: pathOrHook,
+            data: true
+        };
+        for (const middleware of this.middlewares.array())
+            await middleware.run(payload);
+        const preMiddlewares = this.middlewares.filterByCondition(types_1.Method.Every, types_1.Trigger.PreProvider);
+        for (const middleware of preMiddlewares)
+            payload = await middleware[types_1.Method.Every](payload);
+        payload = await this.provider.everyByHook(payload);
+        payload.trigger = types_1.Trigger.PostProvider;
+        if (payload.error)
+            throw payload.error;
+        for (const middleware of this.middlewares.array())
+            await middleware.run(payload);
+        const postMiddlewares = this.middlewares.filterByCondition(types_1.Method.Every, types_1.Trigger.PostProvider);
+        for (const middleware of postMiddlewares)
+            payload = await middleware[types_1.Method.Every](payload);
+        return payload.data;
+    }
     /**
      * Filter data using a path and value or function and optional path.
      * @param pathOrHook The path array or function.
@@ -1031,6 +1088,8 @@ exports.Josh = Josh;
 (function (Josh) {
     let Identifiers;
     (function (Identifiers) {
+        Identifiers["EveryInvalidPath"] = "everyInvalidPath";
+        Identifiers["EveryMissingValue"] = "everyMissingValue";
         Identifiers["FilterInvalidPath"] = "filterInvalidPath";
         Identifiers["FilterMissingValue"] = "filterMissingValue";
         Identifiers["FindInvalidPath"] = "findInvalidPath";

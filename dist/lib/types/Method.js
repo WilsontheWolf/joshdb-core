@@ -7,6 +7,7 @@ var Method;
     Method["Dec"] = "dec";
     Method["Delete"] = "delete";
     Method["Ensure"] = "ensure";
+    Method["Every"] = "every";
     Method["Filter"] = "filter";
     Method["Find"] = "find";
     Method["Get"] = "get";

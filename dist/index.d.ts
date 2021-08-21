@@ -67,6 +67,7 @@ declare enum Method {
     Dec = "dec",
     Delete = "delete",
     Ensure = "ensure",
+    Every = "every",
     Filter = "filter",
     Find = "find",
     Get = "get",
@@ -301,6 +302,93 @@ interface EnsurePayload<Value = unknown> extends Payload, Payload.Data<Value> {
      */
     defaultValue: Value;
 }
+
+/**
+ * The union payload for {@link Method.Every}
+ * @see {@link Payload}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface EveryPayload<Value = unknown> extends Payload, Payload.Data<boolean> {
+    /**
+     * The method for this payload.
+     * @since 2.0.0
+     */
+    method: Method.Every;
+    /**
+     * The type for this payload.
+     * @since 2.0.0
+     */
+    type: Payload.Type.Data | Payload.Type.Hook;
+    /**
+     * The input data for this payload.
+     * @since 2.0.0
+     */
+    inputData?: Value;
+    /**
+     * The input hook for this payload.
+     * @since 2.0.0
+     */
+    inputHook?: EveryHook<Value>;
+    /**
+     * The path for this payload.
+     * @since 2.0.0
+     */
+    path?: string[];
+}
+/**
+ * The data payload for {@link Method.Every}
+ * @see {@link Payload}
+ * @see {@link Payload.ByData}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface EveryByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.Data<boolean> {
+    /**
+     * The method for this payload.
+     * @since 2.0.0
+     */
+    method: Method.Every;
+    /**
+     * The input data for this payload.
+     * @since 2.0.0
+     */
+    inputData: Value;
+    /**
+     * The path for this payload.
+     * @since 2.0.0
+     */
+    path?: string[];
+}
+/**
+ * The hook payload for {@link Method.Every}
+ * @see {@link Payload}
+ * @see {@link Payload.ByHook}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface EveryByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<boolean> {
+    /**
+     * The method for this payload.
+     * @since 2.0.0
+     */
+    method: Method.Every;
+    /**
+     * The input hook for this payload.
+     * @since 2.0.0
+     */
+    inputHook: EveryHook<Value>;
+    /**
+     * The path for this payload.
+     * @since 2.0.0
+     */
+    path?: string[];
+}
+/**
+ * The hook for {@link EveryByHookPayload}
+ * @since 2.0.0
+ */
+declare type EveryHook<Value = unknown> = (data: Value) => Awaited<boolean>;
 
 /**
  * The union payload for {@link Method.Filter}
@@ -823,7 +911,7 @@ interface SomePayload<Value = unknown> extends Payload, Payload.Data<boolean> {
      * The type for this payload.
      * @since 2.0.0
      */
-    type: Payload.Type;
+    type: Payload.Type.Data | Payload.Type.Hook;
     /**
      * The input data for this payload.
      * @since 2.0.0
@@ -1057,6 +1145,8 @@ declare abstract class Middleware<Context extends Middleware.Context = Middlewar
     [Method.Dec](payload: DecPayload): Awaited<DecPayload>;
     [Method.Delete](payload: DeletePayload): Awaited<DeletePayload>;
     [Method.Ensure]<Value = unknown>(payload: EnsurePayload<Value>): Awaited<EnsurePayload<Value>>;
+    [Method.Every]<Value = unknown>(payload: EveryByDataPayload<Value>): Awaited<EveryByDataPayload<Value>>;
+    [Method.Every]<Value = unknown>(payload: EveryByHookPayload<Value>): Awaited<EveryByHookPayload<Value>>;
     [Method.Filter]<Value = unknown>(payload: FilterByDataPayload<Value>): Awaited<FilterByDataPayload<Value>>;
     [Method.Filter]<Value = unknown>(payload: FilterByHookPayload<Value>): Awaited<FilterByHookPayload<Value>>;
     [Method.Find]<Value = unknown>(payload: FindByDataPayload<Value>): Awaited<FindByDataPayload<Value>>;
@@ -1298,6 +1388,8 @@ declare class Josh<Value = unknown> {
      * ```
      */
     ensure<CustomValue = Value>(key: string, defaultValue: CustomValue): Promise<CustomValue>;
+    every<CustomValue = Value>(path: string[], value: CustomValue): Promise<boolean>;
+    every<CustomValue = Value>(hook: EveryHook<CustomValue>, path?: string[]): Promise<boolean>;
     /**
      * Filter data using a path and value.
      * @since 2.0.0
@@ -1635,6 +1727,8 @@ declare namespace Josh {
         middlewareContextData?: MiddlewareContextData<Value>;
     }
     enum Identifiers {
+        EveryInvalidPath = "everyInvalidPath",
+        EveryMissingValue = "everyMissingValue",
         FilterInvalidPath = "filterInvalidPath",
         FilterMissingValue = "filterMissingValue",
         FindInvalidPath = "findInvalidPath",
@@ -1741,6 +1835,18 @@ declare abstract class JoshProvider<Value = unknown> {
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
     abstract ensure<CustomValue = Value>(payload: EnsurePayload<CustomValue>): Awaited<EnsurePayload<CustomValue>>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
+    abstract everyByData<CustomValue = Value>(payload: EveryByDataPayload<CustomValue>): Awaited<EveryByDataPayload<CustomValue>>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
+    abstract everyByHook<CustomValue = Value>(payload: EveryByHookPayload<CustomValue>): Awaited<EveryByHookPayload<CustomValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
@@ -1951,6 +2057,8 @@ declare class MapProvider<Value = unknown> extends JoshProvider<Value> {
     dec(payload: DecPayload): DecPayload;
     delete(payload: DeletePayload): DeletePayload;
     ensure<CustomValue = Value>(payload: EnsurePayload<CustomValue>): EnsurePayload<CustomValue>;
+    everyByData<CustomValue = Value>(payload: EveryByDataPayload<CustomValue>): EveryByDataPayload<CustomValue>;
+    everyByHook<CustomValue = Value>(payload: EveryByHookPayload<CustomValue>): Promise<EveryByHookPayload<CustomValue>>;
     filterByData<CustomValue = Value>(payload: FilterByDataPayload<CustomValue>): FilterByDataPayload<CustomValue>;
     filterByHook<CustomValue = Value>(payload: FilterByHookPayload<CustomValue>): Promise<FilterByHookPayload<CustomValue>>;
     findByData<CustomValue = Value>(payload: FindByDataPayload<CustomValue>): FindByDataPayload<CustomValue>;
@@ -2065,4 +2173,4 @@ declare function isUpdateByHookPayload<Value = unknown>(payload: UpdatePayload<V
 
 declare const version = "[VI]{version}[/VI]";
 
-export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, DecPayload, DeletePayload, EnsurePayload, FilterByDataPayload, FilterByHookPayload, FilterHook, FilterPayload, FindByDataPayload, FindByHookPayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByDataPayload, RemoveByHookPayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByDataPayload, SomeByHookPayload, SomeHook, SomePayload, Trigger, UpdateByDataPayload, UpdateByHookPayload, UpdateHook, UpdatePayload, ValuesPayload, isFilterByDataPayload, isFilterByHookPayload, isFindByDataPayload, isFindByHookPayload, isSomeByDataPayload, isSomeByHookPayload, isUpdateByDataPayload, isUpdateByHookPayload, version };
+export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, DecPayload, DeletePayload, EnsurePayload, EveryByDataPayload, EveryByHookPayload, EveryHook, EveryPayload, FilterByDataPayload, FilterByHookPayload, FilterHook, FilterPayload, FindByDataPayload, FindByHookPayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByDataPayload, RemoveByHookPayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByDataPayload, SomeByHookPayload, SomeHook, SomePayload, Trigger, UpdateByDataPayload, UpdateByHookPayload, UpdateHook, UpdatePayload, ValuesPayload, isFilterByDataPayload, isFilterByHookPayload, isFindByDataPayload, isFindByHookPayload, isSomeByDataPayload, isSomeByHookPayload, isUpdateByDataPayload, isUpdateByHookPayload, version };

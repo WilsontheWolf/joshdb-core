@@ -45,6 +45,9 @@ class Middleware extends pieces_1.Piece {
     [types_1.Method.Ensure](payload) {
         return payload;
     }
+    [types_1.Method.Every](payload) {
+        return payload;
+    }
     [types_1.Method.Filter](payload) {
         return payload;
     }

@@ -95,6 +95,30 @@ class MapProvider extends JoshProvider_1.JoshProvider {
         Reflect.set(payload, 'data', this.cache.get(key));
         return payload;
     }
+    everyByData(payload) {
+        const { path, inputData } = payload;
+        for (const key of this.keys({ method: types_1.Method.Keys, data: [] }).data) {
+            const { data } = this.get({ method: types_1.Method.Get, key, path });
+            if (data !== undefined)
+                continue;
+            if (inputData === data)
+                continue;
+            payload.data = false;
+        }
+        return payload;
+    }
+    async everyByHook(payload) {
+        const { path, inputHook } = payload;
+        for (const key of this.keys({ method: types_1.Method.Keys, data: [] }).data) {
+            const { data } = this.get({ method: types_1.Method.Get, key, path });
+            if (data !== undefined)
+                continue;
+            if (await inputHook(data))
+                continue;
+            payload.data = false;
+        }
+        return payload;
+    }
     filterByData(payload) {
         const { path, inputData } = payload;
         for (const key of this.keys({ method: types_1.Method.Keys, data: [] }).data) {
