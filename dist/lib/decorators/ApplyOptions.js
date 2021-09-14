@@ -21,7 +21,7 @@ const createProxy_1 = require("./utils/createProxy");
  * ```
  */
 function ApplyOptions(options) {
-    return createClassDecorator_1.createClassDecorator((target) => createProxy_1.createProxy(target, {
+    return (0, createClassDecorator_1.createClassDecorator)((target) => (0, createProxy_1.createProxy)(target, {
         construct: (ctor, [context, baseOptions = {}]) => new ctor(context, {
             ...baseOptions,
             ...options

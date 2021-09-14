@@ -13,6 +13,9 @@ class MiddlewareStore extends pieces_1.Store {
         const { instance } = options;
         this.instance = instance;
     }
+    array() {
+        return Array.from(this.values());
+    }
     /**
      * Filter middlewares by their conditions.
      * @since 2.0.0
@@ -22,8 +25,8 @@ class MiddlewareStore extends pieces_1.Store {
      */
     filterByCondition(method, trigger) {
         const middlewares = this.array().filter((middleware) => middleware.use && middleware.conditions.some((c) => c.methods.includes(method) && c.trigger === trigger));
-        const withPositions = middlewares.filter((middleware) => Boolean(middleware.position));
-        const withoutPositions = middlewares.filter((middleware) => !middleware.position);
+        const withPositions = middlewares.filter((middleware) => (middleware.position === undefined ? false : true));
+        const withoutPositions = middlewares.filter((middleware) => (middleware.position === undefined ? true : false));
         return [...withPositions.sort((a, b) => a.position - b.position), ...withoutPositions];
     }
 }

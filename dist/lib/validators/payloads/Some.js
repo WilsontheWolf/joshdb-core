@@ -1,26 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isSomeByHookPayload = exports.isSomeByDataPayload = void 0;
+exports.isSomeByValuePayload = exports.isSomeByHookPayload = void 0;
 const payloads_1 = require("../../payloads");
 const types_1 = require("../../types");
 /**
- * Checks whether the given payload is a {@link SomeByDataPayload}
+ * Validates whether the given payload is {@link SomeByHookPayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
- */
-function isSomeByDataPayload(payload) {
-    return payload.type === payloads_1.Payload.Type.Data && payload.method === types_1.Method.Some;
-}
-exports.isSomeByDataPayload = isSomeByDataPayload;
-/**
- * Checks whether the given payload is a {@link SomeByHookPayload}
- * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
 function isSomeByHookPayload(payload) {
-    return payload.type === payloads_1.Payload.Type.Hook && payload.method === types_1.Method.Some;
+    return payload.method === types_1.Method.Some && payload.type === payloads_1.Payload.Type.Hook;
 }
 exports.isSomeByHookPayload = isSomeByHookPayload;
+/**
+ * Validates whether the given payload is {@link SomeByValuePayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+function isSomeByValuePayload(payload) {
+    return payload.method === types_1.Method.Some && payload.type === payloads_1.Payload.Type.Value;
+}
+exports.isSomeByValuePayload = isSomeByValuePayload;
 //# sourceMappingURL=Some.js.map

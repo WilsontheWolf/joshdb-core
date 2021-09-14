@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CoreAutoEnsure = void 0;
+exports.CoreMiddleware = void 0;
 const tslib_1 = require("tslib");
 const ApplyOptions_1 = require("../lib/decorators/ApplyOptions");
 const Middleware_1 = require("../lib/structures/Middleware");
 const types_1 = require("../lib/types");
-let CoreAutoEnsure = class CoreAutoEnsure extends Middleware_1.Middleware {
+let CoreMiddleware = class CoreMiddleware extends Middleware_1.Middleware {
     async [types_1.Method.Dec](payload) {
         const context = this.getContext();
         if (!context)
@@ -34,8 +34,8 @@ let CoreAutoEnsure = class CoreAutoEnsure extends Middleware_1.Middleware {
         if (!context)
             return payload;
         const { defaultValue } = context;
-        for (const [key] of payload.keyPaths) {
-            if (payload.data[key] !== undefined)
+        for (const [key] of payload.keys) {
+            if (payload.data[key] !== null)
                 continue;
             const { data } = await this.provider.ensure({ method: types_1.Method.Ensure, key, data: defaultValue, defaultValue });
             Reflect.set(payload, 'data', data);
@@ -60,6 +60,15 @@ let CoreAutoEnsure = class CoreAutoEnsure extends Middleware_1.Middleware {
         await this.provider.ensure({ method: types_1.Method.Ensure, key, data: defaultValue, defaultValue });
         return payload;
     }
+    async [types_1.Method.Remove](payload) {
+        const context = this.getContext();
+        if (!context)
+            return payload;
+        const { defaultValue } = context;
+        const { key } = payload;
+        await this.provider.ensure({ method: types_1.Method.Ensure, key, data: defaultValue, defaultValue });
+        return payload;
+    }
     async [types_1.Method.Set](payload) {
         const context = this.getContext();
         if (!context)
@@ -74,7 +83,7 @@ let CoreAutoEnsure = class CoreAutoEnsure extends Middleware_1.Middleware {
         if (!context)
             return payload;
         const { defaultValue } = context;
-        for (const [key] of payload.keyPaths)
+        for (const key of payload.keys)
             await this.provider.ensure({ method: types_1.Method.Ensure, key, data: defaultValue, defaultValue });
         return payload;
     }
@@ -88,22 +97,22 @@ let CoreAutoEnsure = class CoreAutoEnsure extends Middleware_1.Middleware {
         return payload;
     }
 };
-CoreAutoEnsure = tslib_1.__decorate([
-    ApplyOptions_1.ApplyOptions({
+CoreMiddleware = (0, tslib_1.__decorate)([
+    (0, ApplyOptions_1.ApplyOptions)({
         name: types_1.BuiltInMiddleware.AutoEnsure,
         position: 0,
         conditions: [
             {
-                methods: [types_1.Method.Get, types_1.Method.GetMany, types_1.Method.Update],
-                trigger: types_1.Trigger.PostProvider
+                methods: [types_1.Method.Dec, types_1.Method.Inc, types_1.Method.Push, types_1.Method.Remove, types_1.Method.Set, types_1.Method.SetMany],
+                trigger: types_1.Trigger.PreProvider
             },
             {
-                methods: [types_1.Method.Dec, types_1.Method.Inc, types_1.Method.Push, types_1.Method.Set, types_1.Method.SetMany],
-                trigger: types_1.Trigger.PreProvider
+                methods: [types_1.Method.Get, types_1.Method.GetMany, types_1.Method.Update],
+                trigger: types_1.Trigger.PostProvider
             }
         ],
         use: false
     })
-], CoreAutoEnsure);
-exports.CoreAutoEnsure = CoreAutoEnsure;
+], CoreMiddleware);
+exports.CoreMiddleware = CoreMiddleware;
 //# sourceMappingURL=CoreAutoEnsure.js.map

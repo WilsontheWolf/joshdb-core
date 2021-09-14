@@ -4,6 +4,7 @@ exports.Method = void 0;
 var Method;
 (function (Method) {
     Method["AutoKey"] = "autoKey";
+    Method["Clear"] = "clear";
     Method["Dec"] = "dec";
     Method["Delete"] = "delete";
     Method["Ensure"] = "ensure";
@@ -15,9 +16,9 @@ var Method;
     Method["GetMany"] = "getMany";
     Method["Has"] = "has";
     Method["Inc"] = "inc";
-    Method["Init"] = "init";
     Method["Keys"] = "keys";
     Method["Map"] = "map";
+    Method["Partition"] = "partition";
     Method["Push"] = "push";
     Method["Random"] = "random";
     Method["RandomKey"] = "randomKey";

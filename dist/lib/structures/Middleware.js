@@ -36,6 +36,9 @@ class Middleware extends pieces_1.Piece {
     [types_1.Method.AutoKey](payload) {
         return payload;
     }
+    [types_1.Method.Clear](payload) {
+        return payload;
+    }
     [types_1.Method.Dec](payload) {
         return payload;
     }
@@ -73,6 +76,9 @@ class Middleware extends pieces_1.Piece {
         return payload;
     }
     [types_1.Method.Map](payload) {
+        return payload;
+    }
+    [types_1.Method.Partition](payload) {
         return payload;
     }
     [types_1.Method.Push](payload) {

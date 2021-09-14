@@ -1,26 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isFindByHookPayload = exports.isFindByDataPayload = void 0;
+exports.isFindByValuePayload = exports.isFindByHookPayload = void 0;
 const payloads_1 = require("../../payloads");
 const types_1 = require("../../types");
 /**
- * Checks whether the given payload is a {@link FindByDataPayload}
+ * Validates whether the given payload is {@link FindByHookPayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
- */
-function isFindByDataPayload(payload) {
-    return payload.type === payloads_1.Payload.Type.Data && payload.method === types_1.Method.Find;
-}
-exports.isFindByDataPayload = isFindByDataPayload;
-/**
- * Checks whether the given payload is a {@link FindByHookPayload}
- * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
 function isFindByHookPayload(payload) {
-    return payload.type === payloads_1.Payload.Type.Hook && payload.method === types_1.Method.Find;
+    return payload.method === types_1.Method.Find && payload.type === payloads_1.Payload.Type.Hook;
 }
 exports.isFindByHookPayload = isFindByHookPayload;
+/**
+ * Validates whether the given payload is {@link FindByValuePayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+function isFindByValuePayload(payload) {
+    return payload.method === types_1.Method.Find && payload.type === payloads_1.Payload.Type.Value;
+}
+exports.isFindByValuePayload = isFindByValuePayload;
 //# sourceMappingURL=Find.js.map

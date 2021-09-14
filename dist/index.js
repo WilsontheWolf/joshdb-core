@@ -1,17 +1,17 @@
-/* Version: 2.0.0 - August 21, 2021 22:47:23 */
+/* Version: 2.0.0 - September 14, 2021 03:43:23 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.version = void 0;
 const tslib_1 = require("tslib");
-tslib_1.__exportStar(require("./lib/decorators"), exports);
-tslib_1.__exportStar(require("./lib/errors"), exports);
-tslib_1.__exportStar(require("./lib/payloads"), exports);
-tslib_1.__exportStar(require("./lib/structures/defaultProvider"), exports);
-tslib_1.__exportStar(require("./lib/structures/Josh"), exports);
-tslib_1.__exportStar(require("./lib/structures/JoshProvider"), exports);
-tslib_1.__exportStar(require("./lib/structures/Middleware"), exports);
-tslib_1.__exportStar(require("./lib/structures/MiddlewareStore"), exports);
-tslib_1.__exportStar(require("./lib/types"), exports);
-tslib_1.__exportStar(require("./lib/validators"), exports);
+(0, tslib_1.__exportStar)(require("./lib/decorators"), exports);
+(0, tslib_1.__exportStar)(require("./lib/errors"), exports);
+(0, tslib_1.__exportStar)(require("./lib/payloads"), exports);
+(0, tslib_1.__exportStar)(require("./lib/structures/defaultProvider"), exports);
+(0, tslib_1.__exportStar)(require("./lib/structures/Josh"), exports);
+(0, tslib_1.__exportStar)(require("./lib/structures/JoshProvider"), exports);
+(0, tslib_1.__exportStar)(require("./lib/structures/Middleware"), exports);
+(0, tslib_1.__exportStar)(require("./lib/structures/MiddlewareStore"), exports);
+(0, tslib_1.__exportStar)(require("./lib/types"), exports);
+(0, tslib_1.__exportStar)(require("./lib/validators"), exports);
 exports.version = '2.0.0';

@@ -1,26 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isFilterByHookPayload = exports.isFilterByDataPayload = void 0;
+exports.isFilterByValuePayload = exports.isFilterByHookPayload = void 0;
 const payloads_1 = require("../../payloads");
 const types_1 = require("../../types");
 /**
- * Checks whether the given payload is a {@link FilterByDataPayload}
+ * Validates whether the given payload is {@link FilterByHookPayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
- */
-function isFilterByDataPayload(payload) {
-    return payload.type === payloads_1.Payload.Type.Data && payload.method === types_1.Method.Filter;
-}
-exports.isFilterByDataPayload = isFilterByDataPayload;
-/**
- * Checks whether the given payload is a {@link FilterByHookPayload}
- * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
 function isFilterByHookPayload(payload) {
-    return payload.type === payloads_1.Payload.Type.Hook && payload.method === types_1.Method.Filter;
+    return payload.method === types_1.Method.Filter && payload.type === payloads_1.Payload.Type.Hook;
 }
 exports.isFilterByHookPayload = isFilterByHookPayload;
+/**
+ * Validates whether the given payload is {@link FilterByValuePayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+function isFilterByValuePayload(payload) {
+    return payload.method === types_1.Method.Filter && payload.type === payloads_1.Payload.Type.Value;
+}
+exports.isFilterByValuePayload = isFilterByValuePayload;
 //# sourceMappingURL=Filter.js.map

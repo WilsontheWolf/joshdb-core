@@ -1,5 +1,6 @@
+import * as _sapphire_pieces from '@sapphire/pieces';
 import { PieceOptions, Store, Piece, PieceContext } from '@sapphire/pieces';
-import { Awaited } from '@sapphire/utilities';
+import { Primitive, Awaited } from '@sapphire/utilities';
 
 /**
  * Decorator function that applies given options to {@link Middleware} piece.
@@ -59,11 +60,14 @@ declare enum BuiltInMiddleware {
     AutoEnsure = "autoEnsure"
 }
 
-declare type KeyPathArray = [string, string[]];
-declare type KeyPath = KeyPathArray | string;
+declare type StringArray = string[];
+
+declare type KeyPathArray = [string, StringArray | undefined];
+declare type KeyPath = string | KeyPathArray;
 
 declare enum Method {
     AutoKey = "autoKey",
+    Clear = "clear",
     Dec = "dec",
     Delete = "delete",
     Ensure = "ensure",
@@ -75,9 +79,9 @@ declare enum Method {
     GetMany = "getMany",
     Has = "has",
     Inc = "inc",
-    Init = "init",
     Keys = "keys",
     Map = "map",
+    Partition = "partition",
     Push = "push",
     Random = "random",
     RandomKey = "randomKey",
@@ -132,7 +136,7 @@ declare namespace JoshProviderError {
  */
 interface Payload {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method;
@@ -162,36 +166,25 @@ declare namespace Payload {
          * The path for this extension.
          * @since 2.0.0
          */
-        path?: string[];
+        path: StringArray;
     }
     /**
      * The data extension for {@link Payload}.
      * @since 2.0.0
      */
-    interface Data<Value = unknown> {
+    interface Data<DataValue> {
         /**
          * The data for this extension.
          * @since 2.0.0
          */
-        data: Value;
+        data: DataValue;
     }
     /**
      * The optional data extension for {@link Payload}.
      * @see {@link Data}
      * @since 2.0.0
      */
-    type OptionalData<Value = unknown> = Partial<Data<Value>>;
-    /**
-     * The byData extension for {@link Payload}.
-     * @since 2.0.0
-     */
-    interface ByData {
-        /**
-         * The type for this extension.
-         * @since 2.0.0
-         */
-        type: Type.Data;
-    }
+    type OptionalData<DataValue> = Partial<Data<DataValue>>;
     /**
      * The byHook extension for {@link Payload}
      * @since 2.0.0
@@ -214,15 +207,24 @@ declare namespace Payload {
         type: Type.Path;
     }
     /**
+     * The byValue extension for {@link Payload}.
+     * @since 2.0.0
+     */
+    interface ByValue {
+        /**
+         * The type for this extension.
+         * @since 2.0.0
+         */
+        type: Type.Value;
+    }
+    /**
      * The type enum for {@link Payload}.
+     * @see {@link ByHook}
+     * @see {@link ByPath}
+     * @see {@link ByValue}
      * @since 2.0.0
      */
     enum Type {
-        /**
-         * The data type.
-         * @since 2.0.0
-         */
-        Data = "DATA",
         /**
          * The hook type.
          * @since 2.0.0
@@ -232,22 +234,42 @@ declare namespace Payload {
          * The path type.
          * @since 2.0.0
          */
-        Path = "PATH"
+        Path = "PATH",
+        /**
+         * The value type.
+         * @since 2.0.0
+         */
+        Value = "VALUE"
     }
 }
 
 /**
  * The payload for {@link Method.AutoKey}
+ * @since 2.0.0
  * @see {@link Payload}
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
 interface AutoKeyPayload extends Payload, Payload.Data<string> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.AutoKey;
+}
+
+/**
+ * The payload for {@link Method.Clear}
+ * @since 2.0.0
+ * @see {@link Payload}
+ * @since 2.0.0
+ */
+interface ClearPayload extends Payload {
+    /**
+     * The method.this payload is for.
+     * @since 2.0.0
+     */
+    method: Method.Clear;
 }
 
 /**
@@ -257,9 +279,9 @@ interface AutoKeyPayload extends Payload, Payload.Data<string> {
  * @see {@link Payload.OptionalData}
  * @since 2.0.0
  */
-interface DecPayload extends Payload, Payload.KeyPath, Payload.OptionalData<number> {
+interface DecPayload extends Payload, Payload.KeyPath {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Dec;
@@ -273,7 +295,7 @@ interface DecPayload extends Payload, Payload.KeyPath, Payload.OptionalData<numb
  */
 interface DeletePayload extends Payload, Payload.KeyPath {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Delete;
@@ -285,22 +307,22 @@ interface DeletePayload extends Payload, Payload.KeyPath {
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface EnsurePayload<Value = unknown> extends Payload, Payload.Data<Value> {
+interface EnsurePayload<StoredValue> extends Payload, Payload.Data<StoredValue> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Ensure;
     /**
-     * The key for this payload.
+     * The key to get or set.
      * @since 2.0.0
      */
     key: string;
     /**
-     * The default value for this payload.
+     * The default value to store if {@link EnsurePayload.key} doesn't exist.
      * @since 2.0.0
      */
-    defaultValue: Value;
+    defaultValue: StoredValue;
 }
 
 /**
@@ -309,9 +331,9 @@ interface EnsurePayload<Value = unknown> extends Payload, Payload.Data<Value> {
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface EveryPayload<Value = unknown> extends Payload, Payload.Data<boolean> {
+interface EveryPayload<HookValue> extends Payload, Payload.Data<boolean> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Every;
@@ -319,46 +341,22 @@ interface EveryPayload<Value = unknown> extends Payload, Payload.Data<boolean> {
      * The type for this payload.
      * @since 2.0.0
      */
-    type: Payload.Type.Data | Payload.Type.Hook;
+    type: Payload.Type.Hook | Payload.Type.Value;
     /**
-     * The input data for this payload.
+     * The hook to check equality.
      * @since 2.0.0
      */
-    inputData?: Value;
+    hook?: EveryHook<HookValue>;
     /**
-     * The input hook for this payload.
+     * The value to check equality.
      * @since 2.0.0
      */
-    inputHook?: EveryHook<Value>;
+    value?: Primitive;
     /**
-     * The path for this payload.
+     * A path to the value for equality check.
      * @since 2.0.0
      */
-    path?: string[];
-}
-/**
- * The data payload for {@link Method.Every}
- * @see {@link Payload}
- * @see {@link Payload.ByData}
- * @see {@link Payload.Data}
- * @since 2.0.0
- */
-interface EveryByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.Data<boolean> {
-    /**
-     * The method for this payload.
-     * @since 2.0.0
-     */
-    method: Method.Every;
-    /**
-     * The input data for this payload.
-     * @since 2.0.0
-     */
-    inputData: Value;
-    /**
-     * The path for this payload.
-     * @since 2.0.0
-     */
-    path?: string[];
+    path?: StringArray;
 }
 /**
  * The hook payload for {@link Method.Every}
@@ -367,38 +365,57 @@ interface EveryByDataPayload<Value = unknown> extends Payload, Payload.ByData, P
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface EveryByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<boolean> {
+interface EveryByHookPayload<HookValue> extends Payload, Payload.ByHook, Payload.Data<boolean> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Every;
     /**
-     * The input hook for this payload.
+     * The hook to check equality.
      * @since 2.0.0
      */
-    inputHook: EveryHook<Value>;
+    hook: EveryHook<HookValue>;
+}
+/**
+ * The value payload for {@link Method.Every}
+ * @see {@link Payload}
+ * @see {@link Payload.ByValue}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface EveryByValuePayload extends Payload, Payload.ByValue, Payload.Data<boolean> {
     /**
-     * The path for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
-    path?: string[];
+    method: Method.Every;
+    /**
+     * The value to check equality.
+     * @since 2.0.0
+     */
+    value: Primitive;
+    /**
+     * A path to the value for equality check.
+     * @since 2.0.0
+     */
+    path: StringArray;
 }
 /**
  * The hook for {@link EveryByHookPayload}
  * @since 2.0.0
  */
-declare type EveryHook<Value = unknown> = (data: Value) => Awaited<boolean>;
+declare type EveryHook<Value> = (value: Value) => Awaited<boolean>;
 
 /**
  * The union payload for {@link Method.Filter}
  * @see {@link Payload}
- * @see {@link Payload.OptionalData}
+ * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface FilterPayload<Value = unknown> extends Payload, Payload.OptionalData<Record<string, Value | null>> {
+interface FilterPayload<DataValue> extends Payload, Payload.Data<Record<string, DataValue>> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Filter;
@@ -406,46 +423,22 @@ interface FilterPayload<Value = unknown> extends Payload, Payload.OptionalData<R
      * The type for this payload.
      * @since 2.0.0
      */
-    type: Payload.Type;
+    type: Payload.Type.Hook | Payload.Type.Value;
     /**
-     * The input data for this payload.
+     * The hook to check equality.
      * @since 2.0.0
      */
-    inputData?: Value;
+    hook?: FilterHook<DataValue>;
     /**
-     * The input hook for this payload.
+     * The value to check equality.
      * @since 2.0.0
      */
-    inputHook?: FilterHook<Value>;
+    value?: Primitive;
     /**
-     * The path for this payload.
+     * A path to the value for equality check.
      * @since 2.0.0
      */
-    path?: string[];
-}
-/**
- * The data payload for {@link Method.Filter}
- * @see {@link Payload}
- * @see {@link Payload.ByData}
- * @see {@link Payload.Data}
- * @since 2.0.0
- */
-interface FilterByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.Data<Record<string, Value>> {
-    /**
-     * The method for this payload.
-     * @since 2.0.0
-     */
-    method: Method.Filter;
-    /**
-     * The input data for this payload.
-     * @since 2.0.0
-     */
-    inputData: Value;
-    /**
-     * The path for this payload.
-     * @since 2.0.0
-     */
-    path?: string[];
+    path?: StringArray;
 }
 /**
  * The hook payload for {@link Method.Filter}
@@ -454,28 +447,47 @@ interface FilterByDataPayload<Value = unknown> extends Payload, Payload.ByData, 
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface FilterByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<Record<string, Value>> {
+interface FilterByHookPayload<DataValue> extends Payload, Payload.ByHook, Payload.Data<Record<string, DataValue>> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Filter;
     /**
-     * The input hook for this payload.
+     * The hook for this payload.
      * @since 2.0.0
      */
-    inputHook: FilterHook<Value>;
+    hook: FilterHook<DataValue>;
+}
+/**
+ * The value payload for {@link Method.Filter}
+ * @see {@link Payload}
+ * @see {@link Payload.ByValue}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface FilterByValuePayload<DataValue> extends Payload, Payload.ByValue, Payload.Data<Record<string, DataValue>> {
     /**
-     * The path for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
-    path?: string[];
+    method: Method.Filter;
+    /**
+     * The value to check equality.
+     * @since 2.0.0
+     */
+    value: Primitive;
+    /**
+     * A path to the value for equality check.
+     * @since 2.0.0
+     */
+    path: StringArray;
 }
 /**
  * The hook for {@link FilterByHookPayload}
  * @since 2.0.0
  */
-declare type FilterHook<Value = unknown> = (data: Value) => Awaited<Value>;
+declare type FilterHook<HookValue> = (value: HookValue) => Awaited<boolean>;
 
 /**
  * The union payload for {@link Method.Find}
@@ -483,9 +495,9 @@ declare type FilterHook<Value = unknown> = (data: Value) => Awaited<Value>;
  * @see {@link Payload.OptionalData}
  * @since 2.0.0
  */
-interface FindPayload<Value = unknown> extends Payload, Payload.OptionalData<Value> {
+interface FindPayload<DataValue> extends Payload, Payload.OptionalData<DataValue> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Find;
@@ -493,46 +505,22 @@ interface FindPayload<Value = unknown> extends Payload, Payload.OptionalData<Val
      * The type for this payload.
      * @since 2.0.0
      */
-    type: Payload.Type;
+    type: Payload.Type.Hook | Payload.Type.Value;
     /**
-     * The input data for this payload.
+     * The hook to check equality.
      * @since 2.0.0
      */
-    inputData?: Value;
+    hook?: FindHook<DataValue>;
     /**
-     * The input hook for this payload.
+     * The value to check equality.
      * @since 2.0.0
      */
-    inputHook?: FindHook<Value>;
+    value?: Primitive;
     /**
-     * The path for this payload.
+     * A path to the value to check equality.
      * @since 2.0.0
      */
-    path?: string[];
-}
-/**
- * The data payload for {@link Method.Find}
- * @see {@link Payload}
- * @see {@link Payload.ByData}
- * @see {@link Payload.OptionalData}
- * @since 2.0.0
- */
-interface FindByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.OptionalData<Value> {
-    /**
-     * The method for this payload
-     * @since 2.0.0
-     */
-    method: Method.Find;
-    /**
-     * The input data for this payload.
-     * @since 2.0.0
-     */
-    inputData: Value;
-    /**
-     * The path for this payload.
-     * @since 2.0.0
-     */
-    path?: string[];
+    path?: StringArray;
 }
 /**
  * The hook payload for {@link Method.Find}
@@ -541,21 +529,41 @@ interface FindByDataPayload<Value = unknown> extends Payload, Payload.ByData, Pa
  * @see {@link Payload.OptionalData}
  * @since 2.0.0
  */
-interface FindByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.OptionalData<Value> {
+interface FindByHookPayload<DataValue> extends Payload, Payload.ByHook, Payload.OptionalData<DataValue> {
     /**
      * The method for this payload
      * @since 2.0.0
      */
     method: Method.Find;
     /**
-     * The input hook for this payload.
+     * The hook to check equality.
      * @since 2.0.0
      */
-    inputHook: FindHook<Value>;
+    hook: FindHook<DataValue>;
+}
+/**
+ * The value payload for {@link Method.Find}
+ * @see {@link Payload}
+ * @see {@link Payload.ByValue}
+ * @see {@link Payload.OptionalData}
+ * @since 2.0.0
+ */
+interface FindByValuePayload<DataValue> extends Payload, Payload.ByValue, Payload.OptionalData<DataValue> {
     /**
-     * The path for this payload.
+     * The method for this payload
+     * @since 2.0.0
      */
-    path?: string[];
+    method: Method.Find;
+    /**
+     * The value to check equality.
+     * @since 2.0.0
+     */
+    value: Primitive;
+    /**
+     * A path to the value for equality.
+     * @since 2.0.0
+     */
+    path: StringArray;
 }
 /**
  * The hook for {@link FindByHookPayload}
@@ -570,9 +578,9 @@ declare type FindHook<Value = unknown> = (data: Value) => Awaited<boolean>;
  * @see {@link Payload.OptionalData}
  * @since 2.0.0
  */
-interface GetPayload<Value = unknown> extends Payload, Payload.KeyPath, Payload.OptionalData<Value> {
+interface GetPayload<DataValue> extends Payload, Payload.KeyPath, Payload.OptionalData<DataValue> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Get;
@@ -584,9 +592,9 @@ interface GetPayload<Value = unknown> extends Payload, Payload.KeyPath, Payload.
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface GetAllPayload<Value = unknown> extends Payload, Payload.Data<Record<string, Value>> {
+interface GetAllPayload<DataValue> extends Payload, Payload.Data<Record<string, DataValue>> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.GetAll;
@@ -598,17 +606,17 @@ interface GetAllPayload<Value = unknown> extends Payload, Payload.Data<Record<st
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface GetManyPayload<Value = unknown> extends Payload, Payload.Data<Record<string, Value | null>> {
+interface GetManyPayload<DataValue> extends Payload, Payload.Data<Record<string, DataValue | null>> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.GetMany;
     /**
-     * The key/paths for this payload.
+     * The keys to get.
      * @since 2.0.0
      */
-    keyPaths: KeyPathArray[];
+    keys: StringArray;
 }
 
 /**
@@ -620,7 +628,7 @@ interface GetManyPayload<Value = unknown> extends Payload, Payload.Data<Record<s
  */
 interface HasPayload extends Payload, Payload.KeyPath, Payload.Data<boolean> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Has;
@@ -633,9 +641,9 @@ interface HasPayload extends Payload, Payload.KeyPath, Payload.Data<boolean> {
  * @see {@link Payload.OptionalData}
  * @since 2.0.0
  */
-interface IncPayload extends Payload, Payload.KeyPath, Payload.OptionalData<number> {
+interface IncPayload extends Payload, Payload.KeyPath {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Inc;
@@ -647,9 +655,9 @@ interface IncPayload extends Payload, Payload.KeyPath, Payload.OptionalData<numb
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface KeysPayload extends Payload, Payload.Data<string[]> {
+interface KeysPayload extends Payload, Payload.Data<StringArray> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Keys;
@@ -661,9 +669,9 @@ interface KeysPayload extends Payload, Payload.Data<string[]> {
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface MapPayload<Value = unknown> extends Payload, Payload.Data<Value[]> {
+interface MapPayload<DataValue, HookValue = DataValue> extends Payload, Payload.Data<DataValue[]> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      *  @since 2.0.0
      */
     method: Method.Map;
@@ -671,35 +679,17 @@ interface MapPayload<Value = unknown> extends Payload, Payload.Data<Value[]> {
      *  The type for this payload.
      *  @since 2.0.0
      */
-    type: Payload.Type.Path | Payload.Type.Hook;
+    type: Payload.Type.Hook | Payload.Type.Path;
     /**
-     * The path for this payload.
+     * The hook to map by.
      *  @since 2.0.0
      */
-    path?: string[];
+    hook?: MapHook<DataValue, HookValue>;
     /**
-     * The hook for this payload.
+     * The path to map by.
      *  @since 2.0.0
-     */ hook?: MapHook<Value>;
-}
-/**
- *  The path payload for {@link Method.Map}
- *  @see {@link Payload}
- *  @see {@link Payload.ByPath}
- *  @see {@link Payload.Data}
- *  @since 2.0.0
- */
-interface MapByPathPayload<Value = unknown> extends Payload, Payload.ByPath, Payload.Data<Value[]> {
-    /**
-     * The method for this payload.
-     * @since 2.0.0
      */
-    method: Method.Map;
-    /**
-     *  The path for this payload.
-     * @since 2.0.0
-     */
-    path: string[];
+    path?: StringArray;
 }
 /**
  * The hook payload for {@link Method.Map}
@@ -708,23 +698,132 @@ interface MapByPathPayload<Value = unknown> extends Payload, Payload.ByPath, Pay
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface MapByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<Value[]> {
+interface MapByHookPayload<DataValue, HookValue = DataValue> extends Payload, Payload.ByHook, Payload.Data<DataValue[]> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Map;
     /**
-     * The hook for this payload.
+     * The hook to map by.
      * @since 2.0.0
      */
-    hook: MapHook<Value>;
+    hook: MapHook<DataValue, HookValue>;
+}
+/**
+ *  The path payload for {@link Method.Map}
+ *  @see {@link Payload}
+ *  @see {@link Payload.ByPath}
+ *  @see {@link Payload.Data}
+ *  @since 2.0.0
+ */
+interface MapByPathPayload<DataValue> extends Payload, Payload.ByPath, Payload.Data<DataValue[]> {
+    /**
+     * The method this payload is for.
+     * @since 2.0.0
+     */
+    method: Method.Map;
+    /**
+     *  The path to map by.
+     * @since 2.0.0
+     */
+    path: StringArray;
 }
 /**
  * The hook for {@link MapByHookPayload}
  * @since 2.0.0
  */
-declare type MapHook<Value = unknown> = (data: Value) => Awaited<Value>;
+declare type MapHook<Value, HookValue = Value> = (data: HookValue) => Awaited<Value>;
+
+/**
+ * The union payload for {@link Method.Partition}
+ * @see {@link Payload}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface PartitionPayload<DataValue> extends Payload, Payload.Data<PartitionData<DataValue>> {
+    /**
+     * The method this payload is for.
+     * @since 2.0.0
+     */
+    method: Method.Partition;
+    /**
+     * The type for this payload.
+     * @since 2.0.0
+     */
+    type: Payload.Type.Hook | Payload.Type.Value;
+    /**
+     * The hook to check equality.
+     * @since 2.0.0
+     */
+    hook?: PartitionHook<DataValue>;
+    /**
+     * The value to check equality.
+     * @since 2.0.0
+     */
+    value?: Primitive;
+    /**
+     * A path to the value for equality check.
+     * @since 2.0.0
+     */
+    path?: StringArray;
+}
+/**
+ * The hook payload for {@link Method.Partition}
+ * @see {@link Payload}
+ * @see {@link Payload.ByHook}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface PartitionByHookPayload<DataValue> extends Payload, Payload.ByHook, Payload.Data<PartitionData<DataValue>> {
+    /**
+     * The method this payload is for.
+     * @since 2.0.0
+     */
+    method: Method.Partition;
+    /**
+     * The hook for this payload
+     * @since 2.0.0
+     */
+    hook: PartitionHook<DataValue>;
+}
+/**
+ * The value payload for {@link Method.Partition}
+ * @see {@link Payload}
+ * @see {@link Payload.ByValue}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface PartitionByValuePayload<DataValue> extends Payload, Payload.ByValue, Payload.Data<PartitionData<DataValue>> {
+    /**
+     * The method this payload is for.
+     * @since 2.0.0
+     */
+    method: Method.Partition;
+    /**
+     * The value to check equality.
+     * @since 2.0.0
+     */
+    value: Primitive;
+    /**
+     * A path to the value for equality check.
+     * @since 2.0.0
+     */
+    path: StringArray;
+}
+/**
+ * The data for {@link PartitionPayload}
+ * @since 2.0.0
+ */
+interface PartitionData<DataValue> {
+    truthy: Record<string, DataValue>;
+    falsy: Record<string, DataValue>;
+}
+/**
+ * The hook for {@link PartitionByHookPayload}
+ * @since 2.0.0
+ */
+declare type PartitionHook<HookValue> = (value: HookValue) => Awaited<boolean>;
 
 /**
  * The payload for {@link Method.Push}
@@ -732,12 +831,17 @@ declare type MapHook<Value = unknown> = (data: Value) => Awaited<Value>;
  * @see {@link Payload.KeyPath}
  * @since 2.0.0
  */
-interface PushPayload extends Payload, Payload.KeyPath {
+interface PushPayload<Value> extends Payload, Payload.KeyPath {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Push;
+    /**
+     * The value to push to an array.
+     * @since 2.0.0
+     */
+    value: Value;
 }
 
 /**
@@ -746,9 +850,9 @@ interface PushPayload extends Payload, Payload.KeyPath {
  * @see {@link Payload.OptionalData}
  * @since 2.0.0
  */
-interface RandomPayload<Value = unknown> extends Payload, Payload.OptionalData<Value> {
+interface RandomPayload<DataValue> extends Payload, Payload.OptionalData<DataValue> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Random;
@@ -762,7 +866,7 @@ interface RandomPayload<Value = unknown> extends Payload, Payload.OptionalData<V
  */
 interface RandomKeyPayload extends Payload, Payload.OptionalData<string> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.RandomKey;
@@ -774,9 +878,9 @@ interface RandomKeyPayload extends Payload, Payload.OptionalData<string> {
  * @see {@link Payload.KeyPath}
  * @since 2.0.0
  */
-interface RemovePayload<Value = unknown> extends Payload, Payload.KeyPath {
+interface RemovePayload<HookValue> extends Payload, Payload.KeyPath {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Remove;
@@ -784,41 +888,17 @@ interface RemovePayload<Value = unknown> extends Payload, Payload.KeyPath {
      * The type for this payload.
      * @since 2.0.0
      */
-    type: Payload.Type.Data | Payload.Type.Hook;
+    type: Payload.Type.Hook | Payload.Type.Value;
     /**
-     * The input data for this payload.
+     * The hook to check equality.
      * @since 2.0.0
      */
-    inputData?: Value;
+    hook?: RemoveHook<HookValue>;
     /**
-     * The input hook for this payload.
+     * The value to check equality.
      * @since 2.0.0
      */
-    inputHook?: RemoveHook<Value>;
-}
-/**
- * The data payload for {@link Method.Remove}
- * @see {@link Payload}
- * @see {@link Payload.ByData}
- * @see {@link Payload.KeyPath}
- * @since 2.0.0
- */
-interface RemoveByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.KeyPath {
-    /**
-     * The method for this payload.
-     * @since 2.0.0
-     */
-    method: Method.Remove;
-    /**
-     * The type for this payload.
-     * @since 2.0.0
-     */
-    type: Payload.Type.Data;
-    /**
-     * The input data for this payload.
-     * @since 2.0.0
-     */
-    inputData: Value;
+    value?: Primitive;
 }
 /**
  * The hook payload for {@link Method.Remove}
@@ -826,9 +906,9 @@ interface RemoveByDataPayload<Value = unknown> extends Payload, Payload.ByData, 
  * @see {@link Payload.ByHook}
  * @see {@link Payload.KeyPath}
  */
-interface RemoveByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.KeyPath {
+interface RemoveByHookPayload<HookValue> extends Payload, Payload.ByHook, Payload.KeyPath {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Remove;
@@ -838,16 +918,40 @@ interface RemoveByHookPayload<Value = unknown> extends Payload, Payload.ByHook, 
      */
     type: Payload.Type.Hook;
     /**
-     * The input hook for this payload.
+     * The hook to check equality.
      * @since 2.0.0
      */
-    inputHook: RemoveHook<Value>;
+    hook: RemoveHook<HookValue>;
+}
+/**
+ * The data payload for {@link Method.Remove}
+ * @see {@link Payload}
+ * @see {@link Payload.ByValue}
+ * @see {@link Payload.KeyPath}
+ * @since 2.0.0
+ */
+interface RemoveByValuePayload extends Payload, Payload.ByValue, Payload.KeyPath {
+    /**
+     * The method this payload is for.
+     * @since 2.0.0
+     */
+    method: Method.Remove;
+    /**
+     * The type for this payload.
+     * @since 2.0.0
+     */
+    type: Payload.Type.Value;
+    /**
+     * The value to check equality.
+     * @since 2.0.0
+     */
+    value: Primitive;
 }
 /**
  * The hook for {@link RemoveByHookPayload}
  * @since 2.0.0
  */
-declare type RemoveHook<Value = unknown> = (data: Value) => Awaited<boolean>;
+declare type RemoveHook<Value> = (value: Value) => Awaited<boolean>;
 
 /**
  * The payload for {@link Method.Set}
@@ -855,12 +959,17 @@ declare type RemoveHook<Value = unknown> = (data: Value) => Awaited<boolean>;
  * @see {@link Payload.KeyPath}
  * @since 2.0.0
  */
-interface SetPayload extends Payload, Payload.KeyPath {
+interface SetPayload<Value> extends Payload, Payload.KeyPath {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Set;
+    /**
+     * The value to set.
+     * @since 2.0.0
+     */
+    value: Value;
 }
 
 /**
@@ -868,17 +977,22 @@ interface SetPayload extends Payload, Payload.KeyPath {
  * @see {@link Payload}
  * @since 2.0.0
  */
-interface SetManyPayload extends Payload {
+interface SetManyPayload<Value> extends Payload {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.SetMany;
     /**
-     * The key/paths for this payload.
+     * The keys to set.
      * @since 2.0.0
      */
-    keyPaths: KeyPathArray[];
+    keys: StringArray;
+    /**
+     * The value to set at each key.
+     * @since 2.0.0
+     */
+    value: Value;
 }
 
 /**
@@ -889,7 +1003,7 @@ interface SetManyPayload extends Payload {
  */
 interface SizePayload extends Payload, Payload.Data<number> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Size;
@@ -901,9 +1015,9 @@ interface SizePayload extends Payload, Payload.Data<number> {
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface SomePayload<Value = unknown> extends Payload, Payload.Data<boolean> {
+interface SomePayload<HookValue> extends Payload, Payload.Data<boolean> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Some;
@@ -911,46 +1025,22 @@ interface SomePayload<Value = unknown> extends Payload, Payload.Data<boolean> {
      * The type for this payload.
      * @since 2.0.0
      */
-    type: Payload.Type.Data | Payload.Type.Hook;
+    type: Payload.Type.Hook | Payload.Type.Value;
     /**
-     * The input data for this payload.
+     * The hook to check equality.
      * @since 2.0.0
      */
-    inputData?: Value;
+    hook?: SomeHook<HookValue>;
     /**
-     * The input hook for this payload.
+     * The value to check equality.
      * @since 2.0.0
      */
-    inputHook?: SomeHook<Value>;
+    value?: Primitive;
     /**
-     * The path for this payload.
+     * A path to the value to check equality.
      * @since 2.0.0
      */
-    path?: string[];
-}
-/**
- * The data payload for {@link Method.Some}
- * @see {@link Payload}
- * @see {@link Payload.ByData}
- * @see {@link Payload.Data}
- * @since 2.0.0
- */
-interface SomeByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.Data<boolean> {
-    /**
-     * The method for this payload.
-     * @since 2.0.0
-     */
-    method: Method.Some;
-    /**
-     * The input data for this payload.
-     * @since 2.0.0
-     */
-    inputData: Value;
-    /**
-     * The path for this payload.
-     * @since 2.0.0
-     */
-    path?: string[];
+    path?: StringArray;
 }
 /**
  * The hook payload for {@link Method.Some}
@@ -959,9 +1049,9 @@ interface SomeByDataPayload<Value = unknown> extends Payload, Payload.ByData, Pa
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface SomeByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.Data<boolean> {
+interface SomeByHookPayload<HookValue> extends Payload, Payload.ByHook, Payload.Data<boolean> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Some;
@@ -969,18 +1059,37 @@ interface SomeByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Pa
      * The input hook for this payload.
      * @since 2.0.0
      */
-    inputHook: SomeHook<Value>;
+    hook: SomeHook<HookValue>;
+}
+/**
+ * The data payload for {@link Method.Some}
+ * @see {@link Payload}
+ * @see {@link Payload.ByValue}
+ * @see {@link Payload.Data}
+ * @since 2.0.0
+ */
+interface SomeByValuePayload extends Payload, Payload.ByValue, Payload.Data<boolean> {
     /**
-     * The path for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
-    path?: string[];
+    method: Method.Some;
+    /**
+     * The input data for this payload.
+     * @since 2.0.0
+     */
+    value: Primitive;
+    /**
+     * A path to the value to check equality.
+     * @since 2.0.0
+     */
+    path: StringArray;
 }
 /**
  * The hook for {@link SomeByHookPayload}
  * @since 2.0.0
  */
-declare type SomeHook<Value = unknown> = (data: Value) => Awaited<boolean>;
+declare type SomeHook<Value> = (value: Value) => Awaited<boolean>;
 
 /**
  * The union payload for {@link Method.Update}
@@ -989,73 +1098,23 @@ declare type SomeHook<Value = unknown> = (data: Value) => Awaited<boolean>;
  * @see {@link Payload.OptionalData}
  * @since 2.0.0
  */
-interface UpdatePayload<Value = unknown> extends Payload, Payload.KeyPath, Payload.OptionalData<Value> {
+interface UpdatePayload<DataValue, HookValue = DataValue, Value = DataValue> extends Payload, Payload.KeyPath, Payload.OptionalData<DataValue> {
     /**
-     * The method for this payload.
+     * The method this payload is for.
      * @since 2.0.0
      */
     method: Method.Update;
     /**
-     * The type for this payload.
+     * The hook to update stored value.
      * @since 2.0.0
      */
-    type: Payload.Type.Data | Payload.Type.Hook;
-    /**
-     * The input data for this payload.
-     * @since 2.0.0
-     */
-    inputData?: Value;
-    /**
-     * The input hook for this payload.
-     * @since 2.0.0
-     */
-    inputHook?: UpdateHook<Value>;
-}
-/**
- * The data payload for {@link Method.Update}
- * @see {@link Payload}
- * @see {@link Payload.ByData}
- * @see {@link Payload.KeyPath}
- * @see {@link Payload.OptionalData}
- * @since 2.0.0
- */
-interface UpdateByDataPayload<Value = unknown> extends Payload, Payload.ByData, Payload.KeyPath, Payload.OptionalData<Value> {
-    /**
-     * The method for this payload.
-     * @since 2.0.0
-     */
-    method: Method.Update;
-    /**
-     * The input data for this payload.
-     * @since 2.0.0
-     */
-    inputData: Value;
-}
-/**
- * The hook payload for {@link Method.Update}
- * @see {@link Payload}
- * @see {@link Payload.ByHook}
- * @see {@link Payload.KeyPath}
- * @see {@link Payload.OptionalData}
- * @since 2.0.0
- */
-interface UpdateByHookPayload<Value = unknown> extends Payload, Payload.ByHook, Payload.KeyPath, Payload.OptionalData<Value> {
-    /**
-     * The method for this payload.
-     * @since 2.0.0
-     */
-    method: Method.Update;
-    /**
-     * The input hook for this payload.
-     * @since 2.0.0
-     */
-    inputHook: UpdateHook<Value>;
+    hook: UpdateHook<HookValue, Value>;
 }
 /**
  * The hook for {@link UpdateByHookPayload}
  * @since 2.0.0
  */
-declare type UpdateHook<Value = unknown> = (currentData: Value) => Awaited<Value>;
+declare type UpdateHook<HookValue, Value> = (value: HookValue) => Awaited<Value>;
 
 /**
  * The payload for {@link Method.Values}
@@ -1063,7 +1122,7 @@ declare type UpdateHook<Value = unknown> = (currentData: Value) => Awaited<Value
  * @see {@link Payload.Data}
  * @since 2.0.0
  */
-interface ValuesPayload<Value = unknown> extends Payload, Payload.Data<Value[]> {
+interface ValuesPayload<DataValue> extends Payload, Payload.Data<DataValue[]> {
     /**
      * The method for this payload
      * @since 2.0.0
@@ -1075,12 +1134,13 @@ interface ValuesPayload<Value = unknown> extends Payload, Payload.Data<Value[]> 
  * The store to contain {@link Middleware} pieces.
  * @since 2.0.0
  */
-declare class MiddlewareStore<Value = unknown> extends Store<Middleware> {
+declare class MiddlewareStore<StoredValue = unknown> extends Store<Middleware> {
     /**
      * The {@link Josh} instance for this store.
      */
-    instance: Josh<Value>;
-    constructor(options: MiddlewareStoreOptions<Value>);
+    instance: Josh<StoredValue>;
+    constructor(options: MiddlewareStoreOptions<StoredValue>);
+    array(): Middleware[];
     /**
      * Filter middlewares by their conditions.
      * @since 2.0.0
@@ -1094,12 +1154,12 @@ declare class MiddlewareStore<Value = unknown> extends Store<Middleware> {
  * The options for {@link MiddlewareStore}
  * @since 2.0.0
  */
-interface MiddlewareStoreOptions<Value = unknown> {
+interface MiddlewareStoreOptions<StoredValue = unknown> {
     /**
      * The {@link Josh} instance for this store.
      * @since 2.0.0
      */
-    instance: Josh<Value>;
+    instance: Josh<StoredValue>;
 }
 
 /**
@@ -1118,7 +1178,7 @@ interface MiddlewareStoreOptions<Value = unknown> {
  * }
  * ```
  */
-declare abstract class Middleware<Context extends Middleware.Context = Middleware.Context> extends Piece {
+declare class Middleware<Context extends Middleware.Context = Middleware.Context> extends Piece {
     /**
      * The store for this middleware.
      * @since 2.0.0
@@ -1142,38 +1202,54 @@ declare abstract class Middleware<Context extends Middleware.Context = Middlewar
     use: boolean;
     constructor(context: PieceContext, options?: Middleware.Options);
     [Method.AutoKey](payload: AutoKeyPayload): Awaited<AutoKeyPayload>;
+    [Method.Clear](payload: ClearPayload): Awaited<ClearPayload>;
     [Method.Dec](payload: DecPayload): Awaited<DecPayload>;
     [Method.Delete](payload: DeletePayload): Awaited<DeletePayload>;
-    [Method.Ensure]<Value = unknown>(payload: EnsurePayload<Value>): Awaited<EnsurePayload<Value>>;
-    [Method.Every]<Value = unknown>(payload: EveryByDataPayload<Value>): Awaited<EveryByDataPayload<Value>>;
-    [Method.Every]<Value = unknown>(payload: EveryByHookPayload<Value>): Awaited<EveryByHookPayload<Value>>;
-    [Method.Filter]<Value = unknown>(payload: FilterByDataPayload<Value>): Awaited<FilterByDataPayload<Value>>;
-    [Method.Filter]<Value = unknown>(payload: FilterByHookPayload<Value>): Awaited<FilterByHookPayload<Value>>;
-    [Method.Find]<Value = unknown>(payload: FindByDataPayload<Value>): Awaited<FindByDataPayload<Value>>;
-    [Method.Find]<Value = unknown>(payload: FindByHookPayload<Value>): Awaited<FindByHookPayload<Value>>;
-    [Method.Get]<Value = unknown>(payload: GetPayload<Value>): Awaited<GetPayload<Value>>;
-    [Method.GetAll]<Value = unknown>(payload: GetAllPayload<Value>): Awaited<GetAllPayload<Value>>;
-    [Method.GetMany]<Value = unknown>(payload: GetManyPayload<Value>): Awaited<GetManyPayload<Value>>;
+    [Method.Ensure]<StoredValue>(payload: EnsurePayload<StoredValue>): Awaited<EnsurePayload<StoredValue>>;
+    [Method.Every]<HookValue>(payload: EveryByHookPayload<HookValue>): Awaited<EveryByHookPayload<HookValue>>;
+    [Method.Every](payload: EveryByValuePayload): Awaited<EveryByValuePayload>;
+    [Method.Every]<HookValue>(payload: EveryPayload<HookValue>): Awaited<EveryPayload<HookValue>>;
+    [Method.Filter]<StoredValue>(payload: FilterByHookPayload<StoredValue>): Awaited<FilterByHookPayload<StoredValue>>;
+    [Method.Filter]<StoredValue>(payload: FilterByValuePayload<StoredValue>): Awaited<FilterByValuePayload<StoredValue>>;
+    [Method.Filter]<StoredValue>(payload: FilterPayload<StoredValue>): Awaited<FilterPayload<StoredValue>>;
+    [Method.Find]<StoredValue>(payload: FindByHookPayload<StoredValue>): Awaited<FindByHookPayload<StoredValue>>;
+    [Method.Find]<StoredValue>(payload: FindByValuePayload<StoredValue>): Awaited<FindByValuePayload<StoredValue>>;
+    [Method.Find]<StoredValue>(payload: FindPayload<StoredValue>): Awaited<FindPayload<StoredValue>>;
+    [Method.Get]<DataValue>(payload: GetPayload<DataValue>): Awaited<GetPayload<DataValue>>;
+    [Method.GetAll]<DataValue>(payload: GetAllPayload<DataValue>): Awaited<GetAllPayload<DataValue>>;
+    [Method.GetMany]<DataValue>(payload: GetManyPayload<DataValue>): Awaited<GetManyPayload<DataValue>>;
     [Method.Has](payload: HasPayload): Awaited<HasPayload>;
     [Method.Inc](payload: IncPayload): Awaited<IncPayload>;
     [Method.Keys](payload: KeysPayload): Awaited<KeysPayload>;
-    [Method.Map]<Value = unknown>(payload: MapByPathPayload<Value>): Awaited<MapByPathPayload<Value>>;
-    [Method.Map]<Value = unknown>(payload: MapByHookPayload<Value>): Awaited<MapByHookPayload<Value>>;
-    [Method.Push](payload: PushPayload): Awaited<PushPayload>;
-    [Method.Random]<Value = unknown>(payload: RandomPayload<Value>): Awaited<RandomPayload<Value>>;
+    [Method.Map]<Value, HookValue>(payload: MapByHookPayload<Value, HookValue>): Awaited<MapByHookPayload<Value, HookValue>>;
+    [Method.Map]<Value>(payload: MapByPathPayload<Value>): Awaited<MapByPathPayload<Value>>;
+    [Method.Map]<Value, HookValue>(payload: MapPayload<Value, HookValue>): Awaited<MapPayload<Value, HookValue>>;
+    [Method.Partition]<StoredValue>(payload: PartitionByHookPayload<StoredValue>): Awaited<PartitionByHookPayload<StoredValue>>;
+    [Method.Partition]<StoredValue>(payload: PartitionByValuePayload<StoredValue>): Awaited<PartitionByValuePayload<StoredValue>>;
+    [Method.Partition]<StoredValue>(payload: PartitionPayload<StoredValue>): Awaited<PartitionPayload<StoredValue>>;
+    [Method.Push]<Value>(payload: PushPayload<Value>): Awaited<PushPayload<Value>>;
+    [Method.Random]<StoredValue>(payload: RandomPayload<StoredValue>): Awaited<RandomPayload<StoredValue>>;
     [Method.RandomKey](payload: RandomKeyPayload): Awaited<RandomKeyPayload>;
-    [Method.Remove]<Value = unknown>(payload: RemoveByDataPayload<Value>): Awaited<RemoveByDataPayload<Value>>;
-    [Method.Remove]<Value = unknown>(payload: RemoveByHookPayload<Value>): Awaited<RemoveByHookPayload<Value>>;
-    [Method.Set](payload: SetPayload): Awaited<SetPayload>;
-    [Method.SetMany](payload: SetManyPayload): Awaited<SetManyPayload>;
+    [Method.Remove]<HookValue>(payload: RemoveByHookPayload<HookValue>): Awaited<RemoveByHookPayload<HookValue>>;
+    [Method.Remove](payload: RemoveByValuePayload): Awaited<RemoveByValuePayload>;
+    [Method.Remove]<HookValue>(payload: RemovePayload<HookValue>): Awaited<RemovePayload<HookValue>>;
+    [Method.Set]<Value>(payload: SetPayload<Value>): Awaited<SetPayload<Value>>;
+    [Method.SetMany]<StoredValue>(payload: SetManyPayload<StoredValue>): Awaited<SetManyPayload<StoredValue>>;
     [Method.Size](payload: SizePayload): Awaited<SizePayload>;
-    [Method.Some]<Value = unknown>(payload: SomeByDataPayload<Value>): Awaited<SomeByDataPayload<Value>>;
-    [Method.Some]<Value = unknown>(payload: SomeByHookPayload<Value>): Awaited<SomeByHookPayload<Value>>;
-    [Method.Update]<Value = unknown>(payload: UpdateByDataPayload<Value>): Awaited<UpdateByDataPayload<Value>>;
-    [Method.Update]<Value = unknown>(payload: UpdateByHookPayload<Value>): Awaited<UpdateByHookPayload<Value>>;
-    [Method.Values]<Value = unknown>(payload: ValuesPayload<Value>): Awaited<ValuesPayload<Value>>;
+    [Method.Some]<HookValue>(payload: SomeByHookPayload<HookValue>): Awaited<SomeByHookPayload<HookValue>>;
+    [Method.Some]<Value>(payload: SomeByValuePayload): Awaited<SomeByValuePayload>;
+    [Method.Some]<HookValue>(payload: SomePayload<HookValue>): Awaited<SomePayload<HookValue>>;
+    [Method.Update]<StoredValue, Value, HookValue>(payload: UpdatePayload<StoredValue, Value, HookValue>): Awaited<UpdatePayload<StoredValue, Value, HookValue>>;
+    [Method.Values]<StoredValue>(payload: ValuesPayload<StoredValue>): Awaited<ValuesPayload<StoredValue>>;
     run<P extends Payload>(payload: P): Awaited<unknown>;
-    toJSON(): Record<string, any>;
+    toJSON(): {
+        position: number | undefined;
+        conditions: Middleware.Condition[];
+        use: boolean;
+        location: _sapphire_pieces.PieceLocationJSON;
+        name: string;
+        enabled: boolean;
+    };
     /**
      * Retrieve this middleware'es context data from the Josh instance.
      * @since 2.0.0
@@ -1289,7 +1365,7 @@ interface AutoEnsureContext<Value = unknown> extends Middleware.Context {
  *   // More options...
  * });
  */
-declare class Josh<Value = unknown> {
+declare class Josh<StoredValue = unknown> {
     /**
      * This Josh's name. Used for middleware and/or provider information.
      * @since 2.0.0
@@ -1299,21 +1375,21 @@ declare class Josh<Value = unknown> {
      * This Josh's options. Used throughout the instance.
      * @since 2.0.0
      */
-    options: Josh.Options<Value>;
+    options: Josh.Options<StoredValue>;
     /**
      * The middleware store.
      *
      * NOTE: Do not use this unless you know what your doing.
      * @since 2.0.0
      */
-    middlewares: MiddlewareStore;
+    middlewares: MiddlewareStore<StoredValue>;
     /**
      * This Josh's provider instance.
      *
      * NOTE: Do not use this unless you know what your doing.
      */
-    provider: JoshProvider<Value>;
-    constructor(options: Josh.Options<Value>);
+    provider: JoshProvider<StoredValue>;
+    constructor(options: Josh.Options<StoredValue>);
     /**
      * Generate an automatic key. Generally an integer incremented by `1`, but depends on provider.
      * @since 2.0.0
@@ -1327,6 +1403,7 @@ declare class Josh<Value = unknown> {
      * ```
      */
     autoKey(): Promise<string>;
+    clear(): Promise<this>;
     /**
      * Decrement an integer by `1`.
      * @since 2.0.0
@@ -1387,47 +1464,65 @@ declare class Josh<Value = unknown> {
      * await josh.ensure('key', 'defaultValue'); // 'value'
      * ```
      */
-    ensure<CustomValue = Value>(key: string, defaultValue: CustomValue): Promise<CustomValue>;
-    every<CustomValue = Value>(path: string[], value: CustomValue): Promise<boolean>;
-    every<CustomValue = Value>(hook: EveryHook<CustomValue>, path?: string[]): Promise<boolean>;
+    ensure(key: string, defaultValue: StoredValue): Promise<StoredValue>;
+    every(path: StringArray, value: Primitive): Promise<boolean>;
+    every(hook: EveryHook<StoredValue>): Promise<boolean>;
     /**
-     * Filter data using a path and value.
+     * Filter stored values using a path and value.
      * @since 2.0.0
-     * @param path The path array to check on stored data.
-     * @param value The value to check against the data at path.
+     * @param path A path to the value for equality check.
+     * @param value The value to check equality.
      * @param returnBulkType The return bulk type. Defaults to {@link Bulk.Object}
      * @returns The bulk data.
+     *
+     * @example
+     * ```typescript
+     * await josh.set('key', { path: 'value' });
+     *
+     * await josh.filter(['path'], 'value'); // { key: { path: 'value' } }
+     * // Using a return bulk type.
+     * await josh.filter(['path'], 'value', Bulk.OneDimensionalArray); // [{ path: 'value' }]
+     * ```
      */
-    filter<CustomValue = Value, K extends keyof ReturnBulk<CustomValue> = Bulk.Object>(path: string[], value: CustomValue, returnBulkType?: K): Promise<ReturnBulk<CustomValue>[K]>;
-    /** Filter data using a function and optional path.
+    filter<BulkType extends keyof ReturnBulk<StoredValue>>(path: StringArray, value: Primitive, returnBulkType?: BulkType): Promise<ReturnBulk<StoredValue>[BulkType]>;
+    /**
+     * Filter stored data using a hook function.
      * @since 2.0.0
-     * @param hook The function to run on stored data.
-     * @param path The optional path array to get on stored data and pass to the function.
+     * @param hook The hook function to check equality.
+     * @param _value Unused.
      * @param returnBulkType The return bulk type. Defaults to {@link Bulk.Object}
      * @returns The bulk data.
+     *
+     * @example
+     * ```typescript
+     * await josh.set('key', 'value');
+     *
+     * await josh.filter((value) => value === 'value'); // { key: { path: 'value' } }
+     * // Using a return bulk type.
+     * await josh.filter((value) => value === 'value', undefined, Bulk.TwoDimensionalArray); // [['key', 'value']]
+     * ```
      */
-    filter<CustomValue = Value, K extends keyof ReturnBulk<CustomValue> = Bulk.Object>(hook: FilterHook<CustomValue>, path?: string[], returnBulkType?: K): Promise<ReturnBulk<CustomValue>[K]>;
+    filter<BulkType extends keyof ReturnBulk<StoredValue>>(hook: FilterHook<StoredValue>, _value: undefined, returnBulkType?: BulkType): Promise<ReturnBulk<StoredValue>[BulkType]>;
     /**
-     * Find data using a path and value.
+     * Find a stored value using a path and value.
      * @since 2.0.0
-     * @param path The path array to check on stored data.
-     * @param value The value to check against the data at path.
-     * @returns The data found or `null`.
+     * @param path A path to the value for equality check.
+     * @param value The value to check equality.
+     * @returns The found value or null.
      */
-    find<CustomValue = Value>(path: string[], value: CustomValue): Promise<CustomValue>;
+    find(path: StringArray, value: Primitive): Promise<StoredValue | null>;
     /**
-     * Find data using a function and optional path.
+     * Find a stored value using a hook function.
      * @since 2.0.0
-     * @param hook The function to run on stored data.
-     * @param path The optional path array to get on stored data and pass to the function.
-     * @returns The data found or `null`.
+     * @param hook The hook to check equality.
+     * @returns The found value or null.
      */
-    find<CustomValue = Value>(hook: FindHook<CustomValue>, path?: string[]): Promise<CustomValue | null>;
+    find(hook: FindHook<StoredValue>): Promise<StoredValue | null>;
     /**
-     * Get data at a specific key/path.
+     * Get a value using a key.
      * @since 2.0.0
-     * @param keyPath The key/path to get data from.
-     * @returns The data found or `null`.
+     * @param key A key at which a value is.
+     * @returns The value gotten or null.
      *
      * @example
      * ```typescript
@@ -1435,6 +1530,13 @@ declare class Josh<Value = unknown> {
      *
      * await josh.get('key'); // 'value'
      * ```
+     */
+    get(key: string): Promise<StoredValue | null>;
+    /**
+     * Get a value using a key and/or path.
+     * @since 2.0.0
+     * @param keyPath A key and/or path at which a value is.
+     * @returns The value gotten or null.
      *
      * @example
      * ```typescript
@@ -1443,9 +1545,9 @@ declare class Josh<Value = unknown> {
      * await josh.get(['key', ['path']]); // 'value'
      * ```
      */
-    get<CustomValue = Value>(keyPath: KeyPath): Promise<CustomValue | null>;
+    get<Value = StoredValue>(keyPath: KeyPathArray): Promise<Value | null>;
     /**
-     * Get all data.
+     * Get all stored values.
      * @since 2.0.0
      * @param returnBulkType The return bulk type. Defaults to {@link Bulk.Object}
      * @returns The bulk data.
@@ -1468,11 +1570,11 @@ declare class Josh<Value = unknown> {
      * await josh.getAll(Bulk.TwoDimensionalArray); // [['key', { path: 'value' }]]
      * ```
      */
-    getAll<CustomValue = Value, K extends keyof ReturnBulk<CustomValue> = Bulk.Object>(returnBulkType?: K): Promise<ReturnBulk<CustomValue>[K]>;
+    getAll<BulkType extends keyof ReturnBulk<StoredValue> = Bulk.Object>(returnBulkType?: BulkType): Promise<ReturnBulk<StoredValue>[BulkType]>;
     /**
-     * Get data at many key/paths.
+     * Get stored values at multiple keys.
      * @since 2.0.0
-     * @param keyPaths The key/paths to get from.
+     * @param keys An array of keys to get values from.
      * @param returnBulkType The return bulk type. Defaults to {@link Bulk.Object}
      * @returns The bulk data.
      *
@@ -1480,26 +1582,32 @@ declare class Josh<Value = unknown> {
      * ```typescript
      * await josh.set('key', 'value');
      *
-     * await josh.getMany([['key', []]]); // { key: 'value' };
+     * await this.getMany(['key']); // { key: 'value' }
      * // Using a return bulk type.
-     * await josh.getMany([['key', []]], Bulk.OneDimensionalArray); // ['value']
+     * await this.getMany(['key'], Bulk.OneDimensionalArray); // ['value']
      * ```
+     */
+    getMany<BulkType extends keyof ReturnBulk<StoredValue | null>>(keys: StringArray, returnBulkType?: BulkType): Promise<ReturnBulk<StoredValue | null>[BulkType]>;
+    /**
+     * Check if a key and/or path exists.
+     * @since 2.0.0
+     * @param keyPath A key and/or path to the value to check for.
+     * @returns Validation boolean.
      *
      * @example
      * ```typescript
-     * await josh.set('key', { path: 'value' });
+     * await josh.has('key'); // false
      *
-     * await josh.getMany([['key', ['path']]]); // { key: 'value' }
-     * // Using a return bulk type.
-     * await josh.getMany([['key', ['path]]], Bulk.TwoDimensionalArray); // [['key', 'value']]
+     * await josh.set('key', 'value');
+     *
+     * await josh.has('key'); // true
      * ```
      */
-    getMany<CustomValue = Value, K extends keyof ReturnBulk<CustomValue> = Bulk.Object>(keyPaths: KeyPathArray[], returnBulkType?: K): Promise<ReturnBulk<CustomValue | null>[K]>;
     has(keyPath: KeyPath): Promise<boolean>;
     /**
      * Increment an integer by `1`.
      * @since 2.0.0
-     * @param keyPath The key/path to the integer for incrementing.
+     * @param keyPath The key and/or path to an integer value for incrementing.
      * @returns The {@link Josh} instance.
      *
      * @example
@@ -1513,9 +1621,9 @@ declare class Josh<Value = unknown> {
      */
     inc(keyPath: KeyPath): Promise<this>;
     /**
-     * Get an array of keys.
+     * Returns all stored value keys.
      * @since 2.0.0
-     * @returns The array of string keys.
+     * @returns The array of stored value keys.
      *
      * @example
      * ```typescript
@@ -1526,55 +1634,77 @@ declare class Josh<Value = unknown> {
      */
     keys(): Promise<string[]>;
     /**
-     * Map all stored data to an array.
+     * Map stored values by path or hook function.
      * @since 2.0.0
-     * @param pathOrHook A path array or hook function.
-     * @returns The mapped data.
+     * @param pathOrHook The path or hook to map by.
+     * @returns The mapped values.
      *
      * @example
      * ```typescript
-     * await josh.setMany([['key', []], ['anotherKey', []]], { path: 'value' });
+     * await josh.set('key', { path: 'value' });
      *
-     * await josh.map((data) => data.path); // ['value', 'value']
+     * await josh.map(['path']); // ['value']
+     * ```
+     *
+     * @example
+     * ```typescript
+     * await josh.set('key', 'value');
+     *
+     * await josh.map((value) => value.toUpperCase()); // ['VALUE']
      * ```
      */
-    map<CustomValue = Value>(pathOrHook: string[] | MapHook<CustomValue>): Promise<CustomValue[]>;
+    map<Value = StoredValue>(pathOrHook: StringArray | MapHook<Value, StoredValue>): Promise<Value[]>;
     /**
-     * Push a value to an array at a specific key/value.
+     * Filter stored values and get both truthy and falsy results.
      * @since 2.0.0
-     * @param keyPath The key/path to the array for pushing.
-     * @param value The value to push to the array.
-     * @returns The {@link Josh} instance.
+     * @param hook The hook function to check equality.
+     * @param _value Unused.
+     * @param returnBulkType The return bulk type, Defaults to {@link Bulk.Object}
+     * @returns A partition of filtered bulk data. First bulk data is the truthy filter and the second bulk data is the falsy filter.
      */
-    push<CustomValue = Value>(keyPath: KeyPath, value: CustomValue): Promise<this>;
+    partition<BulkType extends keyof ReturnBulk<StoredValue>>(hook: PartitionHook<StoredValue>, _value: undefined, returnBulkType: BulkType): Promise<[ReturnBulk<StoredValue>[BulkType], ReturnBulk<StoredValue>[BulkType]]>;
+    /**
+     * Filter stored values and get both truthy and falsy results.
+     * @since 2.0.0
+     * @param path A path to the value for equality check.
+     * @param value The value to check equality.
+     * @param returnBulkType The return bulk type. Defaults to {@link Bulk.Object}
+     * @returns A partition of filtered bulk data. First bulk data is the truthy filter and the second bulk data is the falsy filter.
+     */
+    partition<BulkType extends keyof ReturnBulk<StoredValue>>(path: StringArray, value: Primitive, returnBulkType: BulkType): Promise<[ReturnBulk<StoredValue>[BulkType], ReturnBulk<StoredValue>[BulkType]]>;
+    /**
+     * Push a value to an array.
+     * @since 2.0.0
+     * @param keyPath A key and/or path to the array.
+     * @param value The value to push.
+     * @returns The {@link Josh} instance.
+     *
+     * @example
+     * ```typescript
+     * await josh.set('key', []);
+     *
+     * await josh.push('key', 'value');
+     *
+     * await josh.get('key'); // ['value']
+     * ```
+     */
+    push<Value = StoredValue>(keyPath: KeyPath, value: Value): Promise<this>;
     /**
      * Get a random value.
      * @since 2.0.0
      * @returns The random data or `null`.
      */
-    random<CustomValue = Value>(): Promise<CustomValue | null>;
+    random(): Promise<StoredValue | null>;
     /**
      * Get a random key.
      * @since 2.0.0
      * @returns The random key or `null`.
      */
     randomKey(): Promise<string | null>;
-    remove<CustomValue = Value>(keyPath: KeyPath, inputDataOrHook: CustomValue | RemoveHook<CustomValue>): Promise<this>;
-    /**
-     * Set data at a specific key/path.
-     * @since 2.0.0
-     * @param keyPath The key/path to the data for setting.
-     * @param value The value to set at the key/path.
-     * @returns The {@link Josh} instance.
-     *
-     * @example
-     * ```typescript
-     * await josh.set('key', 'value');
-     *
-     * await josh.get('key'); // 'value';
-     * ```
-     */
-    set<CustomValue = Value>(keyPath: KeyPath, value: CustomValue): Promise<this>;
+    remove(keyPath: KeyPath, value: Primitive): Promise<this>;
+    remove<Value = StoredValue>(keyPath: KeyPath, hook: RemoveHook<Value>): Promise<this>;
+    set(key: string, value: StoredValue): Promise<this>;
+    set<Value = StoredValue>(keyPath: KeyPathArray, value: Value): Promise<this>;
     /**
      * Set data at many key/paths.
      * @since 2.0.0
@@ -1589,7 +1719,7 @@ declare class Josh<Value = unknown> {
      * await josh.getMany([['key', []]]); // { key: 'value' }
      * ```
      */
-    setMany<CustomValue = Value>(keyPaths: [string, string[]][], value: CustomValue): Promise<this>;
+    setMany(keys: StringArray, value: StoredValue): Promise<this>;
     /**
      * Get the amount of key/values
      * @since 2.0.0
@@ -1602,51 +1732,36 @@ declare class Josh<Value = unknown> {
      */
     size(): Promise<number>;
     /**
-     * Check if data matches with a path and value.
+     * Verify if a path's value matches a value.
      * @since 2.0.0
-     * @param path The path array to check on stored data.
-     * @param value The value to check against the data at path.
-     * @returns Whether the data check is `true` or `false`.
+     * @param path A path to the value for equality check.
+     * @param value The value to check equality.
      */
-    some<CustomValue = Value>(path: string[], value: CustomValue): Promise<boolean>;
+    some(path: StringArray, value: Primitive): Promise<boolean>;
     /**
-     * Check if data matches with a function and optional path.
+     * Verify if a stored value matches with a hook function,
      * @since 2.0.0
-     * @param hook  The function to run on stored data.
-     * @param path The optional path array to get on stored data and pass to the function.
-     * @returns Whether the data check is `true` or `false`.
+     * @param hook The hook to check equality.
      */
-    some<CustomValue = Value>(hook: SomeHook<CustomValue>, path?: string[]): Promise<boolean>;
+    some(hook: SomeHook<StoredValue>): Promise<boolean>;
     /**
-     * Update data at a specific key/path.
-     * @since 2.0.0
-     * @param keyPath The key/path to data for updating.
-     * @param inputDataOrHook The input, either a value or a function.
-     * @returns The updated value or `null` if the data doesn't exist.
+     * Update a stored value using a hook function.
+     * @param keyPath The key and/or path to the stored value for updating.
+     * @param hook The hook to update the stored value.
+     * @returns The updated value or null.
      *
      * @example
      * ```typescript
      * await josh.set('key', 'value');
      *
-     * await josh.update('key', 'anotherValue'); // 'anotherValue'
-     * ```
-     *
-     * @example
-     * ```typescript
-     * await josh.set('key', { path: 'value' })
-     *
-     * await josh.update('key', (data) => {
-     *   data.anotherPath = 'anotherValue';
-     *
-     *   return data;
-     * }); // { path: 'value', anotherPath: 'anotherValue' }
+     * await josh.update('key', (value) => value.toUpperCase()); // 'VALUE'
      * ```
      */
-    update<CustomValue = Value>(keyPath: KeyPath, inputDataOrHook: CustomValue | UpdateHook<CustomValue>): Promise<CustomValue | null>;
+    update<HookValue = StoredValue, Value = HookValue>(keyPath: KeyPath, hook: UpdateHook<HookValue, Value>): Promise<StoredValue | null>;
     /**
-     * Get all data values.
+     * Get all stored values.
      * @since 2.0.0
-     * @returns An array of data values.
+     * @returns An array of stored values.
      *
      * @example
      * ```typescript
@@ -1656,7 +1771,7 @@ declare class Josh<Value = unknown> {
      * await josh.values(); // ['value', 'anotherValue']
      * ```
      */
-    values<CustomValue = Value>(): Promise<CustomValue[]>;
+    values(): Promise<StoredValue[]>;
     /**
      * The initialization method for Josh.
      * @since 2.0.0
@@ -1683,13 +1798,25 @@ declare class Josh<Value = unknown> {
      */
     private convertBulkData;
     /**
-     * A private method for extracting the key/path from a {@link KeyPath} type.
+     * Simple utility function to extract from a key/path.
      * @since 2.0.0
-     * @private
-     * @param keyPath The key/path to extract from.
-     * @returns The extracted key/path data.
+     * @param keyPath The {@link KeyPath} to extract
+     * @returns The extract key/path
      */
     private getKeyPath;
+    /**
+     * Filters pre-provider middlewares by a method.
+     * @since 2.0.0
+     * @param method The method to filter by.
+     * @returns The filtered middlewares.
+     */
+    private getPreMiddlewares;
+    /**
+     * Filters post-provider middlewares by a method.
+     * @param method The method to filter by.
+     * @returns The filtered middlewares.
+     */
+    private getPostMiddlewares;
     /**
      * A static method to create multiple instances of {@link Josh}.
      * @since 2.0.0
@@ -1704,7 +1831,7 @@ declare namespace Josh {
      * The options for {@link Josh}.
      * @since 2.0.0
      */
-    interface Options<Value = unknown> {
+    interface Options<StoredValue = unknown> {
         /**
          * The name for the Josh instance.
          * @since 2.0.0
@@ -1714,7 +1841,7 @@ declare namespace Josh {
          * The provider instance.
          * @since 2.0.0
          */
-        provider?: JoshProvider<Value>;
+        provider?: JoshProvider<StoredValue>;
         /**
          * The middleware directory.
          * @since 2.0.0
@@ -1724,19 +1851,22 @@ declare namespace Josh {
          * The middleware context data.
          * @since 2.0.0
          */
-        middlewareContextData?: MiddlewareContextData<Value>;
+        middlewareContextData?: MiddlewareContextData<StoredValue>;
     }
     enum Identifiers {
-        EveryInvalidPath = "everyInvalidPath",
+        EveryInvalidValue = "everyInvalidValue",
         EveryMissingValue = "everyMissingValue",
-        FilterInvalidPath = "filterInvalidPath",
+        FilterInvalidValue = "filterInvalidValue",
         FilterMissingValue = "filterMissingValue",
-        FindInvalidPath = "findInvalidPath",
+        FindInvalidValue = "findInvalidValue",
         FindMissingValue = "findMissingValue",
-        MissingName = "missingName",
         InvalidProvider = "invalidProvider",
         MiddlewareNotFound = "middlewareNotFound",
-        SomeInvalidPath = "someInvalidPath",
+        MissingName = "missingName",
+        PartitionInvalidValue = "partitionInvalidValue",
+        PartitionMissingValue = "partitionMissingValue",
+        RemoveInvalidValue = "removeInvalidValue",
+        SomeInvalidValue = "someInvalidValue",
         SomeMissingValue = "someMissingValue"
     }
 }
@@ -1777,7 +1907,7 @@ interface MiddlewareContextData<Value = unknown> {
  * }
  * ```
  */
-declare abstract class JoshProvider<Value = unknown> {
+declare abstract class JoshProvider<StoredValue = unknown> {
     /**
      * The name for this provider.
      * @since 2.0.0
@@ -1787,7 +1917,7 @@ declare abstract class JoshProvider<Value = unknown> {
      * The {@link Josh} instance for this provider.
      * @since 2.0.0
      */
-    instance?: Josh<Value>;
+    instance?: Josh<StoredValue>;
     /**
      * The options for this provider.
      * @since 2.0.0
@@ -1810,193 +1940,212 @@ declare abstract class JoshProvider<Value = unknown> {
      * }
      * ```
      */
-    init(context: JoshProvider.Context<Value>): Promise<JoshProvider.Context<Value>>;
+    init(context: JoshProvider.Context<StoredValue>): Promise<JoshProvider.Context<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract autoKey(payload: AutoKeyPayload): Awaited<AutoKeyPayload>;
+    abstract [Method.AutoKey](payload: AutoKeyPayload): Awaited<AutoKeyPayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract dec(payload: DecPayload): Awaited<DecPayload>;
+    abstract [Method.Clear](payload: ClearPayload): Awaited<ClearPayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract delete(payload: DeletePayload): Awaited<DeletePayload>;
+    abstract [Method.Dec](payload: DecPayload): Awaited<DecPayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract ensure<CustomValue = Value>(payload: EnsurePayload<CustomValue>): Awaited<EnsurePayload<CustomValue>>;
+    abstract [Method.Delete](payload: DeletePayload): Awaited<DeletePayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract everyByData<CustomValue = Value>(payload: EveryByDataPayload<CustomValue>): Awaited<EveryByDataPayload<CustomValue>>;
+    abstract [Method.Ensure](payload: EnsurePayload<StoredValue>): Awaited<EnsurePayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract everyByHook<CustomValue = Value>(payload: EveryByHookPayload<CustomValue>): Awaited<EveryByHookPayload<CustomValue>>;
+    abstract [Method.Every]<HookValue>(payload: EveryByHookPayload<HookValue>): Awaited<EveryByHookPayload<HookValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract filterByData<CustomValue = Value>(payload: FilterByDataPayload<CustomValue>): Awaited<FilterByDataPayload<CustomValue>>;
+    abstract [Method.Every]<Value>(payload: EveryByValuePayload): Awaited<EveryByValuePayload>;
+    abstract [Method.Every]<HookValue>(payload: EveryPayload<HookValue>): Awaited<EveryPayload<HookValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract filterByHook<CustomValue = Value>(payload: FilterByHookPayload<CustomValue>): Awaited<FilterByHookPayload<CustomValue>>;
+    abstract [Method.Filter](payload: FilterByHookPayload<StoredValue>): Awaited<FilterByHookPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract findByData<CustomValue = Value>(payload: FindByDataPayload<CustomValue>): Awaited<FindByDataPayload<CustomValue>>;
+    abstract [Method.Filter](payload: FilterByValuePayload<StoredValue>): Awaited<FilterByValuePayload<StoredValue>>;
+    abstract [Method.Filter](payload: FilterPayload<StoredValue>): Awaited<FilterPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract findByHook<CustomValue = Value>(payload: FindByHookPayload<CustomValue>): Awaited<FindByHookPayload<CustomValue>>;
+    abstract [Method.Find](payload: FindByHookPayload<StoredValue>): Awaited<FindByHookPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract get<CustomValue = Value>(payload: GetPayload<CustomValue>): Awaited<GetPayload<CustomValue>>;
+    abstract [Method.Find](payload: FindByValuePayload<StoredValue>): Awaited<FindByValuePayload<StoredValue>>;
+    abstract [Method.Find](payload: FindPayload<StoredValue>): Awaited<FindPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract getAll<CustomValue = Value>(payload: GetAllPayload<CustomValue>): Awaited<GetAllPayload<CustomValue>>;
+    abstract [Method.Get]<DataValue>(payload: GetPayload<DataValue>): Awaited<GetPayload<DataValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract getMany<CustomValue = Value>(payload: GetManyPayload<CustomValue>): Awaited<GetManyPayload<CustomValue>>;
+    abstract [Method.GetAll](payload: GetAllPayload<StoredValue>): Awaited<GetAllPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract has(payload: HasPayload): Awaited<HasPayload>;
+    abstract [Method.GetMany](payload: GetManyPayload<StoredValue>): Awaited<GetManyPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract inc(payload: IncPayload): Awaited<IncPayload>;
+    abstract [Method.Has](payload: HasPayload): Awaited<HasPayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract keys(payload: KeysPayload): Awaited<KeysPayload>;
+    abstract [Method.Inc](payload: IncPayload): Awaited<IncPayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract mapByPath<CustomValue = Value>(payload: MapByPathPayload<CustomValue>): Awaited<MapByPathPayload<CustomValue>>;
+    abstract [Method.Keys](payload: KeysPayload): Awaited<KeysPayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract mapByHook<CustomValue = Value>(payload: MapByHookPayload<CustomValue>): Awaited<MapByHookPayload<CustomValue>>;
+    abstract [Method.Map]<Value, HookValue>(payload: MapByHookPayload<Value, HookValue>): Awaited<MapByHookPayload<Value, HookValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract push<CustomValue = Value>(payload: PushPayload, value: CustomValue): Awaited<PushPayload>;
+    abstract [Method.Map]<Value = StoredValue>(payload: MapByPathPayload<Value>): Awaited<MapByPathPayload<Value>>;
+    abstract [Method.Map]<Value = StoredValue, HookValue = Value>(payload: MapPayload<Value, HookValue>): Awaited<MapPayload<Value, HookValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract random<CustomValue = Value>(payload: RandomPayload<CustomValue>): Awaited<RandomPayload<CustomValue>>;
+    abstract [Method.Partition](payload: PartitionByHookPayload<StoredValue>): Awaited<PartitionByHookPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract randomKey(payload: RandomKeyPayload): Awaited<RandomKeyPayload>;
+    abstract [Method.Partition](payload: PartitionByValuePayload<StoredValue>): Awaited<PartitionByValuePayload<StoredValue>>;
+    abstract [Method.Partition](payload: PartitionPayload<StoredValue>): Awaited<PartitionPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract removeByData<CustomValue = Value>(payload: RemoveByDataPayload<CustomValue>): Awaited<RemoveByDataPayload<CustomValue>>;
+    abstract [Method.Push]<Value>(payload: PushPayload<Value>): Awaited<PushPayload<Value>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract removeByHook<CustomValue = Value>(payload: RemoveByHookPayload<CustomValue>): Awaited<RemoveByHookPayload<CustomValue>>;
+    abstract [Method.Random](payload: RandomPayload<StoredValue>): Awaited<RandomPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract set<CustomValue = Value>(payload: SetPayload, value: CustomValue): Awaited<SetPayload>;
+    abstract [Method.RandomKey](payload: RandomKeyPayload): Awaited<RandomKeyPayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract setMany<CustomValue = Value>(payload: SetManyPayload, value: CustomValue): Awaited<SetManyPayload>;
+    abstract [Method.Remove]<HookValue>(payload: RemoveByHookPayload<HookValue>): Awaited<RemoveByHookPayload<HookValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract size(payload: SizePayload): Awaited<SizePayload>;
+    abstract [Method.Remove]<Value>(payload: RemoveByValuePayload): Awaited<RemoveByValuePayload>;
+    abstract [Method.Remove]<HookValue>(payload: RemovePayload<HookValue>): Awaited<RemovePayload<HookValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract someByData<CustomValue = Value>(payload: SomeByDataPayload<CustomValue>): Awaited<SomeByDataPayload<CustomValue>>;
+    abstract [Method.Set]<Value = StoredValue>(payload: SetPayload<Value>): Awaited<SetPayload<Value>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract someByHook<CustomValue = Value>(payload: SomeByHookPayload<CustomValue>): Awaited<SomeByHookPayload<CustomValue>>;
+    abstract [Method.SetMany](payload: SetManyPayload<StoredValue>): Awaited<SetManyPayload<StoredValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract updateByData<CustomValue = Value>(payload: UpdateByDataPayload<CustomValue>): Awaited<UpdateByDataPayload<CustomValue>>;
+    abstract [Method.Size](payload: SizePayload): Awaited<SizePayload>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract updateByHook<CustomValue = Value>(payload: UpdateByHookPayload<CustomValue>): Awaited<UpdateByHookPayload<CustomValue>>;
+    abstract [Method.Some]<HookValue>(payload: SomeByHookPayload<HookValue>): Awaited<SomeByHookPayload<HookValue>>;
     /**
      * @since 2.0.0
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
-    abstract values<CustomValue = Value>(payload: ValuesPayload<CustomValue>): Awaited<ValuesPayload<CustomValue>>;
+    abstract [Method.Some]<Value>(payload: SomeByValuePayload): Awaited<SomeByValuePayload>;
+    abstract [Method.Some]<HookValue>(payload: SomePayload<HookValue>): Awaited<SomePayload<HookValue>>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
+    abstract [Method.Update]<Value, HookValue>(payload: UpdatePayload<StoredValue, Value, HookValue>): Awaited<UpdatePayload<StoredValue, Value, HookValue>>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
+    abstract [Method.Values](payload: ValuesPayload<StoredValue>): Awaited<ValuesPayload<StoredValue>>;
 }
 declare namespace JoshProvider {
     /**
@@ -2041,7 +2190,7 @@ declare namespace JoshProvider {
  * A provider that uses the Node.js native [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) class.
  * @since 2.0.0
  */
-declare class MapProvider<Value = unknown> extends JoshProvider<Value> {
+declare class MapProvider<StoredValue = unknown> extends JoshProvider<StoredValue> {
     /**
      * The [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) cache to store data.
      * @since 2.0.0
@@ -2053,50 +2202,53 @@ declare class MapProvider<Value = unknown> extends JoshProvider<Value> {
      * @since 2.0.0
      */
     private autoKeyCount;
-    autoKey(payload: AutoKeyPayload): AutoKeyPayload;
-    dec(payload: DecPayload): DecPayload;
-    delete(payload: DeletePayload): DeletePayload;
-    ensure<CustomValue = Value>(payload: EnsurePayload<CustomValue>): EnsurePayload<CustomValue>;
-    everyByData<CustomValue = Value>(payload: EveryByDataPayload<CustomValue>): EveryByDataPayload<CustomValue>;
-    everyByHook<CustomValue = Value>(payload: EveryByHookPayload<CustomValue>): Promise<EveryByHookPayload<CustomValue>>;
-    filterByData<CustomValue = Value>(payload: FilterByDataPayload<CustomValue>): FilterByDataPayload<CustomValue>;
-    filterByHook<CustomValue = Value>(payload: FilterByHookPayload<CustomValue>): Promise<FilterByHookPayload<CustomValue>>;
-    findByData<CustomValue = Value>(payload: FindByDataPayload<CustomValue>): FindByDataPayload<CustomValue>;
-    findByHook<CustomValue = Value>(payload: FindByHookPayload<CustomValue>): Promise<FindByHookPayload<CustomValue>>;
-    get<CustomValue = Value>(payload: GetPayload<CustomValue>): GetPayload<CustomValue>;
-    getAll<CustomValue = Value>(payload: GetAllPayload<CustomValue>): GetAllPayload<CustomValue>;
-    getMany<CustomValue = Value>(payload: GetManyPayload<CustomValue>): GetManyPayload<CustomValue>;
-    has(payload: HasPayload): HasPayload;
-    inc(payload: IncPayload): IncPayload;
-    keys(payload: KeysPayload): KeysPayload;
-    mapByPath<CustomValue = Value>(payload: MapByPathPayload<CustomValue>): MapByPathPayload<CustomValue>;
-    mapByHook<CustomValue = Value>(payload: MapByHookPayload<CustomValue>): Promise<MapByHookPayload<CustomValue>>;
-    push<CustomValue = Value>(payload: PushPayload, value: CustomValue): PushPayload;
-    random<CustomValue = Value>(payload: RandomPayload<CustomValue>): RandomPayload<CustomValue>;
-    randomKey(payload: RandomKeyPayload): RandomKeyPayload;
-    removeByData<CustomValue = Value>(payload: RemoveByDataPayload<CustomValue>): RemoveByDataPayload<CustomValue>;
-    removeByHook<CustomValue = Value>(payload: RemoveByHookPayload<CustomValue>): Promise<RemoveByHookPayload<CustomValue>>;
-    set<CustomValue = Value>(payload: SetPayload, value: CustomValue): SetPayload;
-    setMany<CustomValue = Value>(payload: SetManyPayload, value: CustomValue): SetManyPayload;
-    size(payload: SizePayload): SizePayload;
-    someByData<CustomValue = Value>(payload: SomeByDataPayload<CustomValue>): SomeByDataPayload<CustomValue>;
-    someByHook<CustomValue = Value>(payload: SomeByHookPayload<CustomValue>): Promise<SomeByHookPayload<CustomValue>>;
-    updateByData<CustomValue = Value>(payload: UpdateByDataPayload<CustomValue>): UpdateByDataPayload<CustomValue>;
-    updateByHook<CustomValue = Value>(payload: UpdateByHookPayload<CustomValue>): Promise<UpdateByHookPayload<CustomValue>>;
-    values<CustomValue = Value>(payload: ValuesPayload<CustomValue>): ValuesPayload<CustomValue>;
+    [Method.AutoKey](payload: AutoKeyPayload): AutoKeyPayload;
+    [Method.Clear](payload: ClearPayload): ClearPayload;
+    [Method.Dec](payload: DecPayload): DecPayload;
+    [Method.Delete](payload: DeletePayload): DeletePayload;
+    [Method.Ensure](payload: EnsurePayload<StoredValue>): EnsurePayload<StoredValue>;
+    [Method.Every](payload: EveryByHookPayload<StoredValue>): Promise<EveryByHookPayload<StoredValue>>;
+    [Method.Every](payload: EveryByValuePayload): Promise<EveryByValuePayload>;
+    [Method.Filter](payload: FilterByHookPayload<StoredValue>): Promise<FilterByHookPayload<StoredValue>>;
+    [Method.Filter](payload: FilterByValuePayload<StoredValue>): Promise<FilterByValuePayload<StoredValue>>;
+    [Method.Find](payload: FindByHookPayload<StoredValue>): Promise<FindByHookPayload<StoredValue>>;
+    [Method.Find](payload: FindByValuePayload<StoredValue>): Promise<FindByValuePayload<StoredValue>>;
+    [Method.Get]<Value = StoredValue>(payload: GetPayload<Value>): GetPayload<Value>;
+    [Method.GetAll](payload: GetAllPayload<StoredValue>): GetAllPayload<StoredValue>;
+    [Method.GetMany](payload: GetManyPayload<StoredValue>): GetManyPayload<StoredValue>;
+    [Method.Has](payload: HasPayload): HasPayload;
+    [Method.Inc](payload: IncPayload): IncPayload;
+    [Method.Keys](payload: KeysPayload): KeysPayload;
+    [Method.Map]<DataValue = StoredValue, HookValue = DataValue>(payload: MapByHookPayload<DataValue, HookValue>): Promise<MapByHookPayload<DataValue, HookValue>>;
+    [Method.Map]<DataValue = StoredValue>(payload: MapByPathPayload<DataValue>): Promise<MapByPathPayload<DataValue>>;
+    [Method.Partition](payload: PartitionByHookPayload<StoredValue>): Promise<PartitionByHookPayload<StoredValue>>;
+    [Method.Partition](payload: PartitionByValuePayload<StoredValue>): Promise<PartitionByValuePayload<StoredValue>>;
+    [Method.Push]<Value = StoredValue>(payload: PushPayload<Value>): PushPayload<Value>;
+    [Method.Random](payload: RandomPayload<StoredValue>): RandomPayload<StoredValue>;
+    [Method.RandomKey](payload: RandomKeyPayload): RandomKeyPayload;
+    [Method.Remove]<HookValue = StoredValue>(payload: RemoveByHookPayload<HookValue>): Promise<RemoveByHookPayload<HookValue>>;
+    [Method.Remove](payload: RemoveByValuePayload): Promise<RemoveByValuePayload>;
+    [Method.Set]<Value = StoredValue>(payload: SetPayload<Value>): SetPayload<Value>;
+    [Method.SetMany](payload: SetManyPayload<StoredValue>): SetManyPayload<StoredValue>;
+    [Method.Size](payload: SizePayload): SizePayload;
+    [Method.Some](payload: SomeByHookPayload<StoredValue>): Promise<SomeByHookPayload<StoredValue>>;
+    [Method.Some](payload: SomeByValuePayload): Promise<SomeByValuePayload>;
+    [Method.Update]<HookValue = StoredValue, Value = HookValue>(payload: UpdatePayload<StoredValue, HookValue, Value>): Promise<UpdatePayload<StoredValue, HookValue, Value>>;
+    [Method.Values](payload: ValuesPayload<StoredValue>): ValuesPayload<StoredValue>;
 }
 declare namespace MapProvider {
     enum Identifiers {
         DecInvalidType = "decInvalidType",
         DecMissingData = "decMissingData",
-        DeleteMissingData = "deleteMissingData",
+        FilterInvalidValue = "filterInvalidValue",
+        FindInvalidValue = "findInvalidValue",
         IncInvalidType = "incInvalidType",
         IncMissingData = "incMissingData",
+        PartitionInvalidValue = "partitionInvalidValue",
         PushInvalidType = "pushInvalidType",
         PushMissingData = "pushMissingData",
         RemoveInvalidType = "removeInvalidType",
-        RemoveMissingData = "removeMissingData",
-        SetMissingData = "setMissingData"
+        RemoveMissingData = "removeMissingData"
     }
 }
 
@@ -2112,65 +2264,110 @@ declare class MapProviderError extends JoshProviderError {
 }
 
 /**
- * Checks whether the given payload is a {@link FilterByDataPayload}
+ * Validates whether the given payload is {@link EveryByHookPayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
-declare function isFilterByDataPayload<Value = unknown>(payload: FilterPayload<Value>): payload is FilterByDataPayload<Value>;
+declare function isEveryByHookPayload<HookValue>(payload: EveryPayload<HookValue>): payload is EveryByHookPayload<HookValue>;
 /**
- * Checks whether the given payload is a {@link FilterByHookPayload}
+ * Validates whether the given payload is {@link EveryByValuePayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
-declare function isFilterByHookPayload<Value = unknown>(payload: FilterPayload<Value>): payload is FilterByHookPayload<Value>;
+declare function isEveryByValuePayload<HookPayload>(payload: EveryPayload<HookPayload>): payload is EveryByValuePayload;
 
 /**
- * Checks whether the given payload is a {@link FindByDataPayload}
+ * Validates whether the given payload is {@link FilterByHookPayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
-declare function isFindByDataPayload<Value = unknown>(payload: FindPayload<Value>): payload is FindByDataPayload<Value>;
+declare function isFilterByHookPayload<DataValue>(payload: FilterPayload<DataValue>): payload is FilterByHookPayload<DataValue>;
 /**
- * Checks whether the given payload is a {@link FindByHookPayload}
+ * Validates whether the given payload is {@link FilterByValuePayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
-declare function isFindByHookPayload<Value = unknown>(payload: FindPayload<Value>): payload is FindByHookPayload<Value>;
+declare function isFilterByValuePayload<DataValue>(payload: FilterPayload<DataValue>): payload is FilterByValuePayload<DataValue>;
 
 /**
- * Checks whether the given payload is a {@link SomeByDataPayload}
+ * Validates whether the given payload is {@link FindByHookPayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
-declare function isSomeByDataPayload<Value = unknown>(payload: SomePayload<Value>): payload is SomeByDataPayload<Value>;
+declare function isFindByHookPayload<DataValue>(payload: FindPayload<DataValue>): payload is FindByHookPayload<DataValue>;
 /**
- * Checks whether the given payload is a {@link SomeByHookPayload}
+ * Validates whether the given payload is {@link FindByValuePayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
-declare function isSomeByHookPayload<Value = unknown>(payload: SomePayload<Value>): payload is SomeByHookPayload<Value>;
+declare function isFindByValuePayload<DataValue>(payload: FindPayload<DataValue>): payload is FindByValuePayload<DataValue>;
 
 /**
- * Checks whether the given payload is a {@link UpdateByDataPayload}
+ * Validates whether the given payload is {@link MapByHookPayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
-declare function isUpdateByDataPayload<Value = unknown>(payload: UpdatePayload<Value>): payload is UpdateByDataPayload<Value>;
+declare function isMapByHookPayload<DataValue, HookValue>(payload: MapPayload<DataValue, HookValue>): payload is MapByHookPayload<DataValue, HookValue>;
 /**
- * Checks whether the given payload is a {@link UpdateByHookPayload}
+ * Validates whether the given payload is {@link MapByValuePayload}
  * @since 2.0.0
- * @param payload The payload to check
- * @returns Whether the check is `true` or `false`
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
  */
-declare function isUpdateByHookPayload<Value = unknown>(payload: UpdatePayload<Value>): payload is UpdateByHookPayload<Value>;
+declare function isMapByPathPayload<DataValue, HookValue>(payload: MapPayload<DataValue, HookValue>): payload is MapByPathPayload<DataValue>;
+
+/**
+ * Validates whether the given payload is {@link PartitionByHookPayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+declare function isPartitionByHookPayload<DataValue>(payload: PartitionPayload<DataValue>): payload is PartitionByHookPayload<DataValue>;
+/**
+ * Validates whether the given payload is {@link PartitionByValuePayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+declare function isPartitionByValuePayload<DataValue>(payload: PartitionPayload<DataValue>): payload is PartitionByValuePayload<DataValue>;
+
+/**
+ * Validates whether the given payload is {@link RemoveByHookPayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+declare function isRemoveByHookPayload<HookValue>(payload: RemovePayload<HookValue>): payload is RemoveByHookPayload<HookValue>;
+/**
+ * Validates whether the given payload is {@link RemoveByValuePayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+declare function isRemoveByValuePayload<HookValue>(payload: RemovePayload<HookValue>): payload is RemoveByValuePayload;
+
+/**
+ * Validates whether the given payload is {@link SomeByHookPayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+declare function isSomeByHookPayload<HookValue>(payload: SomePayload<HookValue>): payload is SomeByHookPayload<HookValue>;
+/**
+ * Validates whether the given payload is {@link SomeByValuePayload}
+ * @since 2.0.0
+ * @param payload The payload to validate.
+ * @returns Validation boolean.
+ */
+declare function isSomeByValuePayload<HookValue>(payload: SomePayload<HookValue>): payload is SomeByValuePayload;
 
 declare const version = "[VI]{version}[/VI]";
 
-export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, DecPayload, DeletePayload, EnsurePayload, EveryByDataPayload, EveryByHookPayload, EveryHook, EveryPayload, FilterByDataPayload, FilterByHookPayload, FilterHook, FilterPayload, FindByDataPayload, FindByHookPayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByDataPayload, RemoveByHookPayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByDataPayload, SomeByHookPayload, SomeHook, SomePayload, Trigger, UpdateByDataPayload, UpdateByHookPayload, UpdateHook, UpdatePayload, ValuesPayload, isFilterByDataPayload, isFilterByHookPayload, isFindByDataPayload, isFindByHookPayload, isSomeByDataPayload, isSomeByHookPayload, isUpdateByDataPayload, isUpdateByHookPayload, version };
+export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, ClearPayload, DecPayload, DeletePayload, EnsurePayload, EveryByHookPayload, EveryByValuePayload, EveryHook, EveryPayload, FilterByHookPayload, FilterByValuePayload, FilterHook, FilterPayload, FindByHookPayload, FindByValuePayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, PartitionByHookPayload, PartitionByValuePayload, PartitionData, PartitionHook, PartitionPayload, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByHookPayload, RemoveByValuePayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByHookPayload, SomeByValuePayload, SomeHook, SomePayload, StringArray, Trigger, UpdateHook, UpdatePayload, ValuesPayload, isEveryByHookPayload, isEveryByValuePayload, isFilterByHookPayload, isFilterByValuePayload, isFindByHookPayload, isFindByValuePayload, isMapByHookPayload, isMapByPathPayload, isPartitionByHookPayload, isPartitionByValuePayload, isRemoveByHookPayload, isRemoveByValuePayload, isSomeByHookPayload, isSomeByValuePayload, version };
