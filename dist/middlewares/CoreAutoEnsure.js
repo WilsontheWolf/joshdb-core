@@ -60,6 +60,15 @@ let CoreMiddleware = class CoreMiddleware extends Middleware_1.Middleware {
         await this.provider.ensure({ method: types_1.Method.Ensure, key, data: defaultValue, defaultValue });
         return payload;
     }
+    async [types_1.Method.Math](payload) {
+        const context = this.getContext();
+        if (!context)
+            return payload;
+        const { defaultValue } = context;
+        const { key } = payload;
+        await this.provider.ensure({ method: types_1.Method.Ensure, key, data: defaultValue, defaultValue });
+        return payload;
+    }
     async [types_1.Method.Remove](payload) {
         const context = this.getContext();
         if (!context)

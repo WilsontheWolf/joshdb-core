@@ -16,6 +16,7 @@ const tslib_1 = require("tslib");
 (0, tslib_1.__exportStar)(require("./Inc"), exports);
 (0, tslib_1.__exportStar)(require("./Keys"), exports);
 (0, tslib_1.__exportStar)(require("./Map"), exports);
+(0, tslib_1.__exportStar)(require("./Math"), exports);
 (0, tslib_1.__exportStar)(require("./Partition"), exports);
 (0, tslib_1.__exportStar)(require("./Payload"), exports);
 (0, tslib_1.__exportStar)(require("./Push"), exports);

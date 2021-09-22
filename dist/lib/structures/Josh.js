@@ -549,6 +549,23 @@ class Josh {
             payload = await middleware[types_1.Method.Map](payload);
         return payload.data;
     }
+    async math(keyPath, operator, operand) {
+        const [key, path] = this.getKeyPath(keyPath);
+        let payload = { method: types_1.Method.Math, trigger: types_1.Trigger.PreProvider, key, path, operator, operand };
+        for (const middleware of this.middlewares.array())
+            await middleware.run(payload);
+        for (const middleware of this.getPreMiddlewares(types_1.Method.Math))
+            payload = await middleware[types_1.Method.Math](payload);
+        payload = await this.provider[types_1.Method.Math](payload);
+        payload.trigger = types_1.Trigger.PostProvider;
+        if (payload.error)
+            throw payload.error;
+        for (const middleware of this.middlewares.array())
+            await middleware.run(payload);
+        for (const middleware of this.getPostMiddlewares(types_1.Method.Math))
+            payload = await middleware[types_1.Method.Math](payload);
+        return this;
+    }
     async partition(pathOrHook, value, returnBulkType) {
         if (!(0, utilities_1.isFunction)(pathOrHook)) {
             if (value === undefined)

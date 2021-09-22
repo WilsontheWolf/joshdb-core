@@ -225,6 +225,48 @@ class MapProvider extends JoshProvider_1.JoshProvider {
         }
         return payload;
     }
+    [types_1.Method.Math](payload) {
+        const { key, path, operator, operand } = payload;
+        let { data } = this.get({ method: types_1.Method.Get, key, path });
+        if (data === undefined) {
+            payload.error = new MapProviderError_1.MapProviderError({
+                identifier: MapProvider.Identifiers.MathMissingData,
+                message: path.length === 0 ? `The data at "${key}" does not exist.` : `The data at "${key}.${path.join('.')}" does not exist.`,
+                method: types_1.Method.Math
+            });
+            return payload;
+        }
+        if (!(0, utilities_2.isNumber)(data)) {
+            payload.error = new MapProviderError_1.MapProviderError({
+                identifier: MapProvider.Identifiers.MathInvalidType,
+                message: path.length === 0 ? `The data at "${key}" must be a number.` : `The data at "${key}.${path.join('.')}" must be a number.`,
+                method: types_1.Method.Math
+            });
+            return payload;
+        }
+        switch (operator) {
+            case types_1.MathOperator.Addition:
+                data += operand;
+                break;
+            case types_1.MathOperator.Subtraction:
+                data -= operand;
+                break;
+            case types_1.MathOperator.Multiplication:
+                data *= operand;
+                break;
+            case types_1.MathOperator.Division:
+                data /= operand;
+                break;
+            case types_1.MathOperator.Remainder:
+                data %= operand;
+                break;
+            case types_1.MathOperator.Exponent:
+                data **= operand;
+                break;
+        }
+        this.set({ method: types_1.Method.Set, key, path, value: data });
+        return payload;
+    }
     async [types_1.Method.Partition](payload) {
         if ((0, validators_1.isPartitionByHookPayload)(payload)) {
             const { hook } = payload;
@@ -401,6 +443,8 @@ exports.MapProvider = MapProvider;
         Identifiers["FindInvalidValue"] = "findInvalidValue";
         Identifiers["IncInvalidType"] = "incInvalidType";
         Identifiers["IncMissingData"] = "incMissingData";
+        Identifiers["MathInvalidType"] = "mathInvalidType";
+        Identifiers["MathMissingData"] = "mathMissingData";
         Identifiers["PartitionInvalidValue"] = "partitionInvalidValue";
         Identifiers["PushInvalidType"] = "pushInvalidType";
         Identifiers["PushMissingData"] = "pushMissingData";

@@ -65,6 +65,15 @@ declare type StringArray = string[];
 declare type KeyPathArray = [string, StringArray | undefined];
 declare type KeyPath = string | KeyPathArray;
 
+declare enum MathOperator {
+    Addition = "addition",
+    Subtraction = "subtraction",
+    Multiplication = "multiplication",
+    Division = "division",
+    Remainder = "remainder",
+    Exponent = "exponent"
+}
+
 declare enum Method {
     AutoKey = "autoKey",
     Clear = "clear",
@@ -81,6 +90,7 @@ declare enum Method {
     Inc = "inc",
     Keys = "keys",
     Map = "map",
+    Math = "math",
     Partition = "partition",
     Push = "push",
     Random = "random",
@@ -736,6 +746,30 @@ interface MapByPathPayload<DataValue> extends Payload, Payload.ByPath, Payload.D
 declare type MapHook<Value, HookValue = Value> = (data: HookValue) => Awaited<Value>;
 
 /**
+ * The payload for {@link Method.Math}
+ * @see {@link Payload}
+ * @see {@link Payload.KeyPath}
+ * @since 2.0.0
+ */
+interface MathPayload extends Payload, Payload.KeyPath {
+    /**
+     * The method this payload is for.
+     * @since 2.0.0
+     */
+    method: Method.Math;
+    /**
+     * The operator to apply to the operands.
+     * @since 2.0.0
+     */
+    operator: MathOperator;
+    /**
+     * The operand to apply to the operator.
+     * @since 2.0.0
+     */
+    operand: number;
+}
+
+/**
  * The union payload for {@link Method.Partition}
  * @see {@link Payload}
  * @see {@link Payload.Data}
@@ -1224,6 +1258,7 @@ declare class Middleware<Context extends Middleware.Context = Middleware.Context
     [Method.Map]<Value, HookValue>(payload: MapByHookPayload<Value, HookValue>): Awaited<MapByHookPayload<Value, HookValue>>;
     [Method.Map]<Value>(payload: MapByPathPayload<Value>): Awaited<MapByPathPayload<Value>>;
     [Method.Map]<Value, HookValue>(payload: MapPayload<Value, HookValue>): Awaited<MapPayload<Value, HookValue>>;
+    [Method.Math](payload: MathPayload): Awaited<MathPayload>;
     [Method.Partition]<StoredValue>(payload: PartitionByHookPayload<StoredValue>): Awaited<PartitionByHookPayload<StoredValue>>;
     [Method.Partition]<StoredValue>(payload: PartitionByValuePayload<StoredValue>): Awaited<PartitionByValuePayload<StoredValue>>;
     [Method.Partition]<StoredValue>(payload: PartitionPayload<StoredValue>): Awaited<PartitionPayload<StoredValue>>;
@@ -1654,6 +1689,7 @@ declare class Josh<StoredValue = unknown> {
      * ```
      */
     map<Value = StoredValue>(pathOrHook: StringArray | MapHook<Value, StoredValue>): Promise<Value[]>;
+    math(keyPath: KeyPath, operator: MathOperator, operand: number): Promise<this>;
     /**
      * Filter stored values and get both truthy and falsy results.
      * @since 2.0.0
@@ -2064,6 +2100,12 @@ declare abstract class JoshProvider<StoredValue = unknown> {
      * @param payload The payload sent by this provider's {@link Josh} instance.
      * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
      */
+    abstract [Method.Math](payload: MathPayload): Awaited<MathPayload>;
+    /**
+     * @since 2.0.0
+     * @param payload The payload sent by this provider's {@link Josh} instance.
+     * @returns The payload (modified), originally sent by this provider's {@link Josh} instance.
+     */
     abstract [Method.Partition](payload: PartitionByHookPayload<StoredValue>): Awaited<PartitionByHookPayload<StoredValue>>;
     /**
      * @since 2.0.0
@@ -2221,6 +2263,7 @@ declare class MapProvider<StoredValue = unknown> extends JoshProvider<StoredValu
     [Method.Keys](payload: KeysPayload): KeysPayload;
     [Method.Map]<DataValue = StoredValue, HookValue = DataValue>(payload: MapByHookPayload<DataValue, HookValue>): Promise<MapByHookPayload<DataValue, HookValue>>;
     [Method.Map]<DataValue = StoredValue>(payload: MapByPathPayload<DataValue>): Promise<MapByPathPayload<DataValue>>;
+    [Method.Math](payload: MathPayload): MathPayload;
     [Method.Partition](payload: PartitionByHookPayload<StoredValue>): Promise<PartitionByHookPayload<StoredValue>>;
     [Method.Partition](payload: PartitionByValuePayload<StoredValue>): Promise<PartitionByValuePayload<StoredValue>>;
     [Method.Push]<Value = StoredValue>(payload: PushPayload<Value>): PushPayload<Value>;
@@ -2244,6 +2287,8 @@ declare namespace MapProvider {
         FindInvalidValue = "findInvalidValue",
         IncInvalidType = "incInvalidType",
         IncMissingData = "incMissingData",
+        MathInvalidType = "mathInvalidType",
+        MathMissingData = "mathMissingData",
         PartitionInvalidValue = "partitionInvalidValue",
         PushInvalidType = "pushInvalidType",
         PushMissingData = "pushMissingData",
@@ -2370,4 +2415,4 @@ declare function isSomeByValuePayload<HookValue>(payload: SomePayload<HookValue>
 
 declare const version = "[VI]{version}[/VI]";
 
-export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, ClearPayload, DecPayload, DeletePayload, EnsurePayload, EveryByHookPayload, EveryByValuePayload, EveryHook, EveryPayload, FilterByHookPayload, FilterByValuePayload, FilterHook, FilterPayload, FindByHookPayload, FindByValuePayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, PartitionByHookPayload, PartitionByValuePayload, PartitionData, PartitionHook, PartitionPayload, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByHookPayload, RemoveByValuePayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByHookPayload, SomeByValuePayload, SomeHook, SomePayload, StringArray, Trigger, UpdateHook, UpdatePayload, ValuesPayload, isEveryByHookPayload, isEveryByValuePayload, isFilterByHookPayload, isFilterByValuePayload, isFindByHookPayload, isFindByValuePayload, isMapByHookPayload, isMapByPathPayload, isPartitionByHookPayload, isPartitionByValuePayload, isRemoveByHookPayload, isRemoveByValuePayload, isSomeByHookPayload, isSomeByValuePayload, version };
+export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, ClearPayload, DecPayload, DeletePayload, EnsurePayload, EveryByHookPayload, EveryByValuePayload, EveryHook, EveryPayload, FilterByHookPayload, FilterByValuePayload, FilterHook, FilterPayload, FindByHookPayload, FindByValuePayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, MathOperator, MathPayload, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, PartitionByHookPayload, PartitionByValuePayload, PartitionData, PartitionHook, PartitionPayload, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByHookPayload, RemoveByValuePayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByHookPayload, SomeByValuePayload, SomeHook, SomePayload, StringArray, Trigger, UpdateHook, UpdatePayload, ValuesPayload, isEveryByHookPayload, isEveryByValuePayload, isFilterByHookPayload, isFilterByValuePayload, isFindByHookPayload, isFindByValuePayload, isMapByHookPayload, isMapByPathPayload, isPartitionByHookPayload, isPartitionByValuePayload, isRemoveByHookPayload, isRemoveByValuePayload, isSomeByHookPayload, isSomeByValuePayload, version };

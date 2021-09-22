@@ -78,6 +78,9 @@ class Middleware extends pieces_1.Piece {
     [types_1.Method.Map](payload) {
         return payload;
     }
+    [types_1.Method.Math](payload) {
+        return payload;
+    }
     [types_1.Method.Partition](payload) {
         return payload;
     }

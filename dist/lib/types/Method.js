@@ -18,6 +18,7 @@ var Method;
     Method["Inc"] = "inc";
     Method["Keys"] = "keys";
     Method["Map"] = "map";
+    Method["Math"] = "math";
     Method["Partition"] = "partition";
     Method["Push"] = "push";
     Method["Random"] = "random";
