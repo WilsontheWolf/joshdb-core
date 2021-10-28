@@ -1,5 +1,4 @@
-import * as _sapphire_pieces from '@sapphire/pieces';
-import { PieceOptions, Store, Piece, PieceContext } from '@sapphire/pieces';
+import { PieceOptions, Store, Piece, PieceContext, PieceJSON } from '@sapphire/pieces';
 import { Primitive, Awaitable } from '@sapphire/utilities';
 
 /**
@@ -1287,14 +1286,7 @@ declare class Middleware<Context extends Middleware.Context = Middleware.Context
     [Method.Update]<StoredValue, Value, HookValue>(payload: UpdatePayload<StoredValue, Value, HookValue>): Awaitable<UpdatePayload<StoredValue, Value, HookValue>>;
     [Method.Values]<StoredValue>(payload: ValuesPayload<StoredValue>): Awaitable<ValuesPayload<StoredValue>>;
     run<P extends Payload>(payload: P): Awaitable<unknown>;
-    toJSON(): {
-        position: number | undefined;
-        conditions: Middleware.Condition[];
-        use: boolean;
-        location: _sapphire_pieces.PieceLocationJSON;
-        name: string;
-        enabled: boolean;
-    };
+    toJSON(): Middleware.JSON;
     /**
      * Retrieve this middleware'es context data from the Josh instance.
      * @since 2.0.0
@@ -1352,8 +1344,26 @@ declare namespace Middleware {
         methods: Method[];
         /**
          * The trigger for this condition.
+         * @since 2.0.0
          */
         trigger: Trigger;
+    }
+    interface JSON extends PieceJSON {
+        /**
+         * The position of this middleware.
+         * @since 2.0.0
+         */
+        position?: number;
+        /**
+         * The conditions for this middleware.
+         * @since 2.0.0
+         */
+        conditions: Condition[];
+        /**
+         * Whether to use this middleware or not.
+         * @since 2.0.0
+         */
+        use: boolean;
     }
     enum Identifiers {
         MissingConditions = "missingConditions"
