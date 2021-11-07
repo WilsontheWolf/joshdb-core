@@ -63,7 +63,7 @@ class Josh {
         if (!name)
             throw new errors_1.JoshError({ identifier: Josh.Identifiers.MissingName, message: 'The "name" option is required to initiate a Josh instance.' });
         this.name = name;
-        this.provider = provider ?? new defaultProvider_1.MapProvider();
+        this.provider = provider ?? new defaultProvider_1.MapProvider({});
         if (!(this.provider instanceof JoshProvider_1.JoshProvider))
             throw new errors_1.JoshError({
                 identifier: Josh.Identifiers.InvalidProvider,

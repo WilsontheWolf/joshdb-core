@@ -17,7 +17,7 @@ exports.JoshProvider = void 0;
  * ```
  */
 class JoshProvider {
-    constructor(options = {}) {
+    constructor(options) {
         this.options = options;
     }
     /**

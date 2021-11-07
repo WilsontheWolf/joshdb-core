@@ -1979,7 +1979,7 @@ declare abstract class JoshProvider<StoredValue = unknown> {
      * @since 2.0.0
      */
     options: JoshProvider.Options;
-    constructor(options?: JoshProvider.Options);
+    constructor(options: JoshProvider.Options);
     /**
      * Initialize the provider.
      * @since 2.0.0
