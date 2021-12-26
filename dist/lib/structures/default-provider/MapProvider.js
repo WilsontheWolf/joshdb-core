@@ -94,7 +94,7 @@ class MapProvider extends JoshProvider_1.JoshProvider {
         }
         if ((0, validators_1.isEveryByValuePayload)(payload)) {
             const { path, value } = payload;
-            for (const key of this.keys({ method: types_1.Method.Keys, data: [] }).data) {
+            for (const key of this.cache.keys()) {
                 const { data } = this.get({ method: types_1.Method.Get, key, path });
                 if (value === data)
                     continue;
@@ -132,7 +132,7 @@ class MapProvider extends JoshProvider_1.JoshProvider {
     async [types_1.Method.Find](payload) {
         if ((0, validators_1.isFindByHookPayload)(payload)) {
             const { hook } = payload;
-            for (const value of this.values({ method: types_1.Method.Values, data: [] }).data) {
+            for (const value of this.cache.values()) {
                 const foundValue = await hook(value);
                 if (!foundValue)
                     continue;

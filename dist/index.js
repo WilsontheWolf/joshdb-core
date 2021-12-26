@@ -1,4 +1,4 @@
-/* Version: 2.0.0 - November 7, 2021 18:29:46 */
+/* Version: 2.0.0 - December 26, 2021 16:53:01 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -7,7 +7,7 @@ const tslib_1 = require("tslib");
 (0, tslib_1.__exportStar)(require("./lib/decorators"), exports);
 (0, tslib_1.__exportStar)(require("./lib/errors"), exports);
 (0, tslib_1.__exportStar)(require("./lib/payloads"), exports);
-(0, tslib_1.__exportStar)(require("./lib/structures/defaultProvider"), exports);
+(0, tslib_1.__exportStar)(require("./lib/structures/default-provider"), exports);
 (0, tslib_1.__exportStar)(require("./lib/structures/Josh"), exports);
 (0, tslib_1.__exportStar)(require("./lib/structures/JoshProvider"), exports);
 (0, tslib_1.__exportStar)(require("./lib/structures/Middleware"), exports);
