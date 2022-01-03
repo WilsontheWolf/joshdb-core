@@ -1,4 +1,4 @@
-/* Version: 2.0.0 - December 26, 2021 16:53:01 */
+/* Version: 2.0.0 - January 3, 2022 22:20:00 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", { value: true });
