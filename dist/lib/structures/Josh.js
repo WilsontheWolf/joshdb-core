@@ -7,6 +7,7 @@ const payloads_1 = require("../payloads");
 const types_1 = require("../types");
 const default_provider_1 = require("./default-provider");
 const JoshProvider_1 = require("./JoshProvider");
+const Middleware_1 = require("./Middleware");
 const MiddlewareStore_1 = require("./MiddlewareStore");
 /**
  * The base class that makes Josh work.
@@ -86,13 +87,29 @@ class Josh {
         return this;
     }
     /**
-     * Adds a middleware instance to this Josh.
+     * Adds a middleware by either providing options and a hook or a {@link Middleware} instance.
      * @since 2.0.0
-     * @param instance The instance to add.
-     * @returns This Josh class.
+     * @param optionsOrInstance The options or an instance.
+     * @param hook The hook for the middleware. Optional if providing an instance.
+     * @returns This Josh instance.
      */
-    use(instance) {
-        this.middlewares.set(instance.name, instance);
+    use(optionsOrInstance, hook) {
+        if (optionsOrInstance instanceof Middleware_1.Middleware)
+            this.middlewares.set(optionsOrInstance.name, optionsOrInstance);
+        else {
+            if (hook === undefined)
+                throw new errors_1.JoshError({
+                    identifier: Josh.Identifiers.UseMiddlewareHookNotFound,
+                    message: 'The "hook" parameter for middleware was not found.'
+                });
+            const { name, position, trigger, method } = optionsOrInstance;
+            const options = { name, position, conditions: { pre: [], post: [] } };
+            const middleware = this.middlewares.get(options.name) ?? new Middleware_1.Middleware(options).init(this.middlewares);
+            if (trigger !== undefined && method !== undefined)
+                options.conditions[trigger === types_1.Trigger.PreProvider ? 'pre' : 'post'].push(method);
+            Object.defineProperty(middleware, method === undefined ? 'run' : method, { value: hook });
+            this.middlewares.set(middleware.name, middleware);
+        }
         return this;
     }
     /**
@@ -956,6 +973,7 @@ exports.Josh = Josh;
         Identifiers["RemoveInvalidValue"] = "removeInvalidValue";
         Identifiers["SomeInvalidValue"] = "someInvalidValue";
         Identifiers["SomeMissingValue"] = "someMissingValue";
+        Identifiers["UseMiddlewareHookNotFound"] = "useMiddlewareHookNotFound";
     })(Identifiers = Josh.Identifiers || (Josh.Identifiers = {}));
 })(Josh = exports.Josh || (exports.Josh = {}));
 var Bulk;

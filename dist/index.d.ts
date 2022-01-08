@@ -1247,7 +1247,7 @@ declare class Middleware<StoredValue = unknown> {
      * The store for this middleware.
      * @since 2.0.0
      */
-    store?: MiddlewareStore;
+    store?: MiddlewareStore<StoredValue>;
     /**
      * The name of this middleware.
      * @since 2.0.0
@@ -1270,7 +1270,7 @@ declare class Middleware<StoredValue = unknown> {
      * @param store The store to set to `this`.
      * @returns Returns the current Middleware class.
      */
-    init(store: MiddlewareStore): this;
+    init(store: MiddlewareStore<StoredValue>): this;
     [Method.AutoKey](payload: AutoKeyPayload): Awaitable<AutoKeyPayload>;
     [Method.Clear](payload: ClearPayload): Awaitable<ClearPayload>;
     [Method.Dec](payload: DecPayload): Awaitable<DecPayload>;
@@ -1323,12 +1323,12 @@ declare class Middleware<StoredValue = unknown> {
      * The Josh instance this middleware is currently running on.
      * @since 2.0.0
      */
-    protected get instance(): MiddlewareStore['instance'];
+    protected get instance(): Josh<StoredValue>;
     /**
      * The provider that is used with the current Josh.
      * @since 2.0.0
      */
-    protected get provider(): MiddlewareStore['instance']['provider'];
+    protected get provider(): JoshProvider<StoredValue>;
 }
 declare namespace Middleware {
     /**
@@ -1495,12 +1495,18 @@ declare class Josh<StoredValue = unknown> {
      */
     init(): Promise<this>;
     /**
-     * Adds a middleware instance to this Josh.
+     * Adds a middleware by providing options and a hook.
      * @since 2.0.0
-     * @param instance The instance to add.
-     * @returns This Josh class.
+     * @param options The options for this middleware instance.
+     * @param hook The hook to run for the payload.
      */
-    use(instance: Middleware): this;
+    use<P extends Payload>(options: Josh.UseMiddlewareOptions, hook: (payload: P) => Awaitable<P>): this;
+    /**
+     * Adds a middleware by providing a {@link Middleware} instance.
+     * @since 2.0.0
+     * @param instance The middleware instance.
+     */
+    use(instance: Middleware<StoredValue>): this;
     /**
      * Generate an automatic key. Generally an integer incremented by `1`, but depends on provider.
      * @since 2.0.0
@@ -1928,6 +1934,32 @@ declare namespace Josh {
             [BuiltInMiddleware.AutoEnsure]: CoreMiddleware.ContextData;
         };
     }
+    /**
+     * The options for the {@link Josh.use} method.
+     * @since 2.0.0
+     */
+    interface UseMiddlewareOptions {
+        /**
+         * The name for the middleware.
+         * @since 2.0.0
+         */
+        name: string;
+        /**
+         * The position for the middleware.
+         * @since 2.0.0
+         */
+        position?: number;
+        /**
+         * The trigger for the middleware hook.
+         * @since 2.0.0
+         */
+        trigger?: Trigger;
+        /**
+         * The trigger for the middleware hook.
+         * @since 2.0.0
+         */
+        method?: Method;
+    }
     enum Identifiers {
         EveryInvalidValue = "everyInvalidValue",
         EveryMissingValue = "everyMissingValue",
@@ -1942,7 +1974,8 @@ declare namespace Josh {
         PartitionMissingValue = "partitionMissingValue",
         RemoveInvalidValue = "removeInvalidValue",
         SomeInvalidValue = "someInvalidValue",
-        SomeMissingValue = "someMissingValue"
+        SomeMissingValue = "someMissingValue",
+        UseMiddlewareHookNotFound = "useMiddlewareHookNotFound"
     }
 }
 declare enum Bulk {
