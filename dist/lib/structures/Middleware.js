@@ -1,17 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Middleware = void 0;
-const pieces_1 = require("@sapphire/pieces");
-const JoshError_1 = require("../errors/JoshError");
+const errors_1 = require("../errors");
 const types_1 = require("../types");
 /**
- * The base class piece for creating middlewares. Extend this piece to create a middleware.
+ * The base class for creating middlewares. Extend this class to create a middleware.
  * @see {@link Middleware.Options} for all available options for middlewares.
  * @since 2.0.0
  *
  * @example
  * ```typescript
- * (at)ApplyOptions<MiddlewareOptions>({
+ * (at)ApplyOptions<Middleware.Options>({
  *   name: 'middleware',
  *   // More options...
  * })
@@ -19,19 +18,33 @@ const types_1 = require("../types");
  *   // Make method implementations...
  * }
  * ```
+ *
+ * ```typescript
+ * export class CoreMiddleware extends Middleware {
+ *   public constructor() {
+ *     super({
+ *       name: 'middleware'
+ *     })
+ *   }
+ * }
+ * ```
  */
-class Middleware extends pieces_1.Piece {
-    constructor(context, options = {}) {
-        super(context, options);
-        const { position, conditions, use } = options;
-        if (!conditions)
-            throw new JoshError_1.JoshError({
-                identifier: Middleware.Identifiers.MissingConditions,
-                message: 'The "conditions" property is a required Middleware option.'
-            });
+class Middleware {
+    constructor(options) {
+        const { name, position, conditions } = options;
+        this.name = name;
         this.position = position;
         this.conditions = conditions;
-        this.use = use ?? true;
+    }
+    /**
+     * Initiates this class with it's store.
+     * @since 2.0.0
+     * @param store The store to set to `this`.
+     * @returns Returns the current Middleware class.
+     */
+    init(store) {
+        this.store = store;
+        return this;
     }
     [types_1.Method.AutoKey](payload) {
         return payload;
@@ -117,27 +130,28 @@ class Middleware extends pieces_1.Piece {
     run(payload) {
         return payload;
     }
-    toJSON() {
-        return { ...super.toJSON(), position: this.position, conditions: this.conditions, use: this.use };
-    }
     /**
-     * Retrieve this middleware'es context data from the Josh instance.
+     * Adds the options of this class to an object.
      * @since 2.0.0
-     * @returns The context or `undefined`
+     * @returns The options for this middleware as an object.
      */
-    getContext() {
-        const contextData = this.instance.options.middlewareContextData ?? {};
-        return Reflect.get(contextData, this.name);
+    toJSON() {
+        return { name: this.name, position: this.position, conditions: this.conditions };
     }
     /**
-     * Get this middleware's Josh instance.
+     * The Josh instance this middleware is currently running on.
      * @since 2.0.0
      */
     get instance() {
+        if (this.store === undefined)
+            throw new errors_1.JoshError({
+                identifier: Middleware.Identifiers.StoreNotFound,
+                message: 'The "store" property is undefined. This usually means this middleware has not been initiated.'
+            });
         return this.store.instance;
     }
     /**
-     * Get this middleware's provider instance.
+     * The provider that is used with the current Josh.
      * @since 2.0.0
      */
     get provider() {
@@ -148,7 +162,7 @@ exports.Middleware = Middleware;
 (function (Middleware) {
     let Identifiers;
     (function (Identifiers) {
-        Identifiers["MissingConditions"] = "missingConditions";
+        Identifiers["StoreNotFound"] = "storeNotFound";
     })(Identifiers = Middleware.Identifiers || (Middleware.Identifiers = {}));
 })(Middleware = exports.Middleware || (exports.Middleware = {}));
 //# sourceMappingURL=Middleware.js.map

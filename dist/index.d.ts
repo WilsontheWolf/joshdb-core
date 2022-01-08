@@ -1,24 +1,21 @@
-import { PieceOptions, Store, Piece, PieceContext, PieceJSON } from '@sapphire/pieces';
 import { Primitive, Awaitable } from '@sapphire/utilities';
 
 /**
- * Decorator function that applies given options to {@link Middleware} piece.
+ * Decorator function that applies given options to {@link Middleware} class.
  * @since 2.0.0
- * @param options The options to pass to the middleware constructor.
+ * @param options The middleware options.
  *
  * @example
  * ```typescript
- * import { ApplyOptions, Middleware } from '@joshdb/core';
+ * import { ApplyMiddlewareOptions, Middleware } from '@joshdb/core';
  *
- * (at)ApplyOptions<Middleware.Options>({
+ * (at)ApplyMiddlewareOptions({
  *   name: 'name',
- *   position: 0,
- *   conditions: []
+ *   // More options...
  * })
  * export class CoreMiddleware extends Middleware {}
- * ```
- */
-declare function ApplyOptions<T extends PieceOptions>(options: T): ClassDecorator;
+ * ``` */
+declare function ApplyMiddlewareOptions(options: Middleware.Options): ClassDecorator;
 
 /**
  * The base class for errors in {@link Josh}
@@ -1174,45 +1171,59 @@ interface ValuesPayload<DataValue> extends Payload, Payload.Data<DataValue[]> {
 }
 
 /**
- * The store to contain {@link Middleware} pieces.
+ * The store to contain {@link Middleware} classes.
  * @since 2.0.0
  */
-declare class MiddlewareStore<StoredValue = unknown> extends Store<Middleware> {
+declare class MiddlewareStore<StoredValue = unknown> extends Map<string, Middleware<StoredValue>> {
     /**
-     * The {@link Josh} instance for this store.
+     * The link {@link Josh} instance for this store.
+     * @since 2.0.0
      */
     instance: Josh<StoredValue>;
-    constructor(options: MiddlewareStoreOptions<StoredValue>);
-    array(): Middleware[];
+    constructor(options: MiddlewareStore.Options<StoredValue>);
+    /**
+     * Gets an array of middlewares.
+     * @since 2.0.0
+     * @returns The array of middlewares.
+     */
+    array(): Middleware<StoredValue>[];
+    /**
+     * Get pre provider middlewares by method.
+     * @since 2.0.0
+     * @param method The method to filter by.
+     * @returns The middlewares after filtered.
+     */
+    getPreMiddlewares(method: Method): Middleware<StoredValue>[];
+    /**
+     * Get post provider middlewares by method.
+     * @since 2.0.0
+     * @param method The method to filter by.
+     * @returns The middlewares after filtered.
+     */
+    getPostMiddlewares(method: Method): Middleware<StoredValue>[];
     /**
      * Filter middlewares by their conditions.
      * @since 2.0.0
-     * @param method The method to filter by.
-     * @param trigger The trigger to filter by.
-     * @returns An array of middleware's in which the method and trigger matched.
+     * @param method
+     * @param trigger
+     * @returns
      */
-    filterByCondition(method: Method, trigger: Trigger): Middleware[];
+    private filterByCondition;
 }
-/**
- * The options for {@link MiddlewareStore}
- * @since 2.0.0
- */
-interface MiddlewareStoreOptions<StoredValue = unknown> {
-    /**
-     * The {@link Josh} instance for this store.
-     * @since 2.0.0
-     */
-    instance: Josh<StoredValue>;
+declare namespace MiddlewareStore {
+    interface Options<StoredValue = unknown> {
+        instance: Josh<StoredValue>;
+    }
 }
 
 /**
- * The base class piece for creating middlewares. Extend this piece to create a middleware.
+ * The base class for creating middlewares. Extend this class to create a middleware.
  * @see {@link Middleware.Options} for all available options for middlewares.
  * @since 2.0.0
  *
  * @example
  * ```typescript
- * (at)ApplyOptions<MiddlewareOptions>({
+ * (at)ApplyOptions<Middleware.Options>({
  *   name: 'middleware',
  *   // More options...
  * })
@@ -1220,30 +1231,46 @@ interface MiddlewareStoreOptions<StoredValue = unknown> {
  *   // Make method implementations...
  * }
  * ```
+ *
+ * ```typescript
+ * export class CoreMiddleware extends Middleware {
+ *   public constructor() {
+ *     super({
+ *       name: 'middleware'
+ *     })
+ *   }
+ * }
+ * ```
  */
-declare class Middleware<Context extends Middleware.Context = Middleware.Context> extends Piece {
+declare class Middleware<StoredValue = unknown> {
     /**
      * The store for this middleware.
      * @since 2.0.0
      */
-    store: MiddlewareStore;
+    store?: MiddlewareStore;
     /**
-     * The position of this middleware.
+     * The name of this middleware.
+     * @since 2.0.0
+     */
+    name: string;
+    /**
+     * The position this middleware runs at.
      * @since 2.0.0
      */
     readonly position?: number;
     /**
-     * The conditions of this middleware.
+     * The conditions this middleware to run.
      * @since 2.0.0
      */
-    readonly conditions: Middleware.Condition[];
+    readonly conditions: Middleware.Conditions;
+    constructor(options: Middleware.Options);
     /**
-     * Whether to use this middleware or not.
+     * Initiates this class with it's store.
      * @since 2.0.0
-     * @default true
+     * @param store The store to set to `this`.
+     * @returns Returns the current Middleware class.
      */
-    use: boolean;
-    constructor(context: PieceContext, options?: Middleware.Options);
+    init(store: MiddlewareStore): this;
     [Method.AutoKey](payload: AutoKeyPayload): Awaitable<AutoKeyPayload>;
     [Method.Clear](payload: ClearPayload): Awaitable<ClearPayload>;
     [Method.Dec](payload: DecPayload): Awaitable<DecPayload>;
@@ -1286,30 +1313,34 @@ declare class Middleware<Context extends Middleware.Context = Middleware.Context
     [Method.Update]<StoredValue, Value, HookValue>(payload: UpdatePayload<StoredValue, Value, HookValue>): Awaitable<UpdatePayload<StoredValue, Value, HookValue>>;
     [Method.Values]<StoredValue>(payload: ValuesPayload<StoredValue>): Awaitable<ValuesPayload<StoredValue>>;
     run<P extends Payload>(payload: P): Awaitable<unknown>;
+    /**
+     * Adds the options of this class to an object.
+     * @since 2.0.0
+     * @returns The options for this middleware as an object.
+     */
     toJSON(): Middleware.JSON;
     /**
-     * Retrieve this middleware'es context data from the Josh instance.
+     * The Josh instance this middleware is currently running on.
      * @since 2.0.0
-     * @returns The context or `undefined`
      */
-    protected getContext<C extends Middleware.Context = Context>(): C | undefined;
+    protected get instance(): MiddlewareStore['instance'];
     /**
-     * Get this middleware's Josh instance.
+     * The provider that is used with the current Josh.
      * @since 2.0.0
      */
-    protected get instance(): Josh<unknown>;
-    /**
-     * Get this middleware's provider instance.
-     * @since 2.0.0
-     */
-    protected get provider(): JoshProvider<unknown>;
+    protected get provider(): MiddlewareStore['instance']['provider'];
 }
 declare namespace Middleware {
     /**
      * The options for {@link Middleware}
      * @since 2.0.0
      */
-    interface Options extends PieceOptions {
+    interface Options {
+        /**
+         * The name of this middleware.
+         * @since 2.0.0
+         */
+        name: string;
         /**
          * The position at which this middleware runs at.
          * @since 2.0.0
@@ -1319,36 +1350,34 @@ declare namespace Middleware {
          * The conditions for this middleware to run on.
          * @since 2.0.0
          */
-        conditions?: Condition[];
-        /**
-         * Whether this middleware is enabled or not.
-         * @since 2.0.0
-         */
-        use?: boolean;
+        conditions: Conditions;
     }
     /**
-     * The middleware context base interface.
+     * The conditions to run this middleware on.
      * @since 2.0.0
      */
-    interface Context {
+    interface Conditions {
+        /**
+         * The `pre` provider method conditions to run at.
+         * @since 2.0.0
+         */
+        pre: Method[];
+        /**
+         * The `post` provider method conditions to run at.
+         * @since 2.0.0
+         */
+        post: Method[];
     }
     /**
-     * A middleware condition to run on.
+     * The options in an object for {@link Middleware}
      * @since 2.0.0
      */
-    interface Condition {
+    interface JSON {
         /**
-         * The methods for this condition.
+         * The name of this middleware.
          * @since 2.0.0
          */
-        methods: Method[];
-        /**
-         * The trigger for this condition.
-         * @since 2.0.0
-         */
-        trigger: Trigger;
-    }
-    interface JSON extends PieceJSON {
+        name: string;
         /**
          * The position of this middleware.
          * @since 2.0.0
@@ -1358,20 +1387,31 @@ declare namespace Middleware {
          * The conditions for this middleware.
          * @since 2.0.0
          */
-        conditions: Condition[];
-        /**
-         * Whether to use this middleware or not.
-         * @since 2.0.0
-         */
-        use: boolean;
+        conditions: Conditions;
     }
     enum Identifiers {
-        MissingConditions = "missingConditions"
+        StoreNotFound = "storeNotFound"
     }
 }
 
-interface AutoEnsureContext<Value = unknown> extends Middleware.Context {
-    defaultValue: Value;
+declare class CoreMiddleware extends Middleware {
+    [Method.Dec](payload: DecPayload): Promise<DecPayload>;
+    [Method.Get]<Value>(payload: GetPayload<Value>): Promise<GetPayload<Value>>;
+    [Method.GetMany]<Value>(payload: GetManyPayload<Value>): Promise<GetManyPayload<Value>>;
+    [Method.Inc](payload: IncPayload): Promise<IncPayload>;
+    [Method.Push]<Value>(payload: PushPayload<Value>): Promise<PushPayload<Value>>;
+    [Method.Math](payload: MathPayload): Promise<MathPayload>;
+    [Method.Remove]<HookValue>(payload: RemoveByHookPayload<HookValue>): Promise<RemoveByHookPayload<HookValue>>;
+    [Method.Remove](payload: RemoveByValuePayload): Promise<RemoveByValuePayload>;
+    [Method.Set]<Value>(payload: SetPayload<Value>): Promise<SetPayload<Value>>;
+    [Method.SetMany]<Value>(payload: SetManyPayload<Value>): Promise<SetManyPayload<Value>>;
+    [Method.Update]<StoredValue, Value, HookValue>(payload: UpdatePayload<StoredValue, Value, HookValue>): Promise<UpdatePayload<StoredValue, Value, HookValue>>;
+    private get context();
+}
+declare namespace CoreMiddleware {
+    interface ContextData<Value = unknown> {
+        defaultValue: Value;
+    }
 }
 
 /**
@@ -1432,9 +1472,7 @@ declare class Josh<StoredValue = unknown> {
      */
     options: Josh.Options<StoredValue>;
     /**
-     * The middleware store.
-     *
-     * NOTE: Do not use this unless you know what your doing.
+     * This Josh's middlewares.
      * @since 2.0.0
      */
     middlewares: MiddlewareStore<StoredValue>;
@@ -1445,6 +1483,24 @@ declare class Josh<StoredValue = unknown> {
      */
     provider: JoshProvider<StoredValue>;
     constructor(options: Josh.Options<StoredValue>);
+    /**
+     * The initialization method for Josh.
+     * @since 2.0.0
+     * @returns The {@link Josh} instance
+     *
+     * @example
+     * ```typescript
+     * await josh.init();
+     * ```
+     */
+    init(): Promise<this>;
+    /**
+     * Adds a middleware instance to this Josh.
+     * @since 2.0.0
+     * @param instance The instance to add.
+     * @returns This Josh class.
+     */
+    use(instance: Middleware): this;
     /**
      * Generate an automatic key. Generally an integer incremented by `1`, but depends on provider.
      * @since 2.0.0
@@ -1828,23 +1884,6 @@ declare class Josh<StoredValue = unknown> {
      * ```
      */
     values(): Promise<StoredValue[]>;
-    /**
-     * The initialization method for Josh.
-     * @since 2.0.0
-     * @returns The {@link Josh} instance
-     *
-     * @example
-     * ```typescript
-     * await josh.init();
-     * ```
-     */
-    init(): Promise<this>;
-    /**
-     * Enables a middleware that was not enabled by default.
-     * @since 2.0.0
-     * @param name The name of the middleware to enable.
-     */
-    use(name: string): this;
     /** A private method for converting bulk data.
      * @since 2.0.0
      * @private
@@ -1860,19 +1899,6 @@ declare class Josh<StoredValue = unknown> {
      * @returns The extract key/path
      */
     private getKeyPath;
-    /**
-     * Filters pre-provider middlewares by a method.
-     * @since 2.0.0
-     * @param method The method to filter by.
-     * @returns The filtered middlewares.
-     */
-    private getPreMiddlewares;
-    /**
-     * Filters post-provider middlewares by a method.
-     * @param method The method to filter by.
-     * @returns The filtered middlewares.
-     */
-    private getPostMiddlewares;
     /**
      * A static method to create multiple instances of {@link Josh}.
      * @since 2.0.0
@@ -1898,16 +1924,9 @@ declare namespace Josh {
          * @since 2.0.0
          */
         provider?: JoshProvider<StoredValue>;
-        /**
-         * The middleware directory.
-         * @since 2.0.0
-         */
-        middlewareDirectory?: string;
-        /**
-         * The middleware context data.
-         * @since 2.0.0
-         */
-        middlewareContextData?: MiddlewareContextData<StoredValue>;
+        middlewareContextData?: {
+            [BuiltInMiddleware.AutoEnsure]: CoreMiddleware.ContextData;
+        };
     }
     enum Identifiers {
         EveryInvalidValue = "everyInvalidValue",
@@ -1938,14 +1957,6 @@ interface ReturnBulk<Value = unknown> {
     [Bulk.OneDimensionalArray]: Value[];
     [Bulk.TwoDimensionalArray]: [string, Value][];
     [K: string]: Record<string, Value> | Map<string, Value> | Value[] | [string, Value][];
-}
-/**
- * The context data for middlewares. Indexed by their keys being the name of the middleware.
- * @since 2.0.0
- */
-interface MiddlewareContextData<Value = unknown> {
-    [BuiltInMiddleware.AutoEnsure]?: AutoEnsureContext<Value>;
-    [K: string]: Middleware.Context | undefined;
 }
 
 /**
@@ -2435,4 +2446,4 @@ declare function isSomeByValuePayload<HookValue>(payload: SomePayload<HookValue>
 
 declare const version = "[VI]{version}[/VI]";
 
-export { ApplyOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, ClearPayload, DecPayload, DeletePayload, EnsurePayload, EveryByHookPayload, EveryByValuePayload, EveryHook, EveryPayload, FilterByHookPayload, FilterByValuePayload, FilterHook, FilterPayload, FindByHookPayload, FindByValuePayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, MathOperator, MathPayload, Method, Middleware, MiddlewareContextData, MiddlewareStore, MiddlewareStoreOptions, PartitionByHookPayload, PartitionByValuePayload, PartitionData, PartitionHook, PartitionPayload, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByHookPayload, RemoveByValuePayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByHookPayload, SomeByValuePayload, SomeHook, SomePayload, StringArray, Trigger, UpdateHook, UpdatePayload, ValuesPayload, isEveryByHookPayload, isEveryByValuePayload, isFilterByHookPayload, isFilterByValuePayload, isFindByHookPayload, isFindByValuePayload, isMapByHookPayload, isMapByPathPayload, isPartitionByHookPayload, isPartitionByValuePayload, isRemoveByHookPayload, isRemoveByValuePayload, isSomeByHookPayload, isSomeByValuePayload, version };
+export { ApplyMiddlewareOptions, AutoKeyPayload, BuiltInMiddleware, Bulk, ClearPayload, DecPayload, DeletePayload, EnsurePayload, EveryByHookPayload, EveryByValuePayload, EveryHook, EveryPayload, FilterByHookPayload, FilterByValuePayload, FilterHook, FilterPayload, FindByHookPayload, FindByValuePayload, FindHook, FindPayload, GetAllPayload, GetManyPayload, GetPayload, HasPayload, IncPayload, Josh, JoshError, JoshProvider, JoshProviderError, KeyPath, KeyPathArray, KeysPayload, MapByHookPayload, MapByPathPayload, MapHook, MapPayload, MapProvider, MapProviderError, MathOperator, MathPayload, Method, Middleware, MiddlewareStore, PartitionByHookPayload, PartitionByValuePayload, PartitionData, PartitionHook, PartitionPayload, Payload, PushPayload, RandomKeyPayload, RandomPayload, RemoveByHookPayload, RemoveByValuePayload, RemoveHook, RemovePayload, ReturnBulk, SetManyPayload, SetPayload, SizePayload, SomeByHookPayload, SomeByValuePayload, SomeHook, SomePayload, StringArray, Trigger, UpdateHook, UpdatePayload, ValuesPayload, isEveryByHookPayload, isEveryByValuePayload, isFilterByHookPayload, isFilterByValuePayload, isFindByHookPayload, isFindByValuePayload, isMapByHookPayload, isMapByPathPayload, isPartitionByHookPayload, isPartitionByValuePayload, isRemoveByHookPayload, isRemoveByValuePayload, isSomeByHookPayload, isSomeByValuePayload, version };

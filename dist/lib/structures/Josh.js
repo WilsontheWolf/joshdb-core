@@ -1,9 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bulk = exports.Josh = void 0;
-const pieces_1 = require("@sapphire/pieces");
 const utilities_1 = require("@sapphire/utilities");
-const path_1 = require("path");
 const errors_1 = require("../errors");
 const payloads_1 = require("../payloads");
 const types_1 = require("../types");
@@ -58,7 +56,7 @@ const MiddlewareStore_1 = require("./MiddlewareStore");
  */
 class Josh {
     constructor(options) {
-        const { name, provider, middlewareDirectory } = options;
+        const { name, provider } = options;
         this.options = options;
         if (!name)
             throw new errors_1.JoshError({ identifier: Josh.Identifiers.MissingName, message: 'The "name" option is required to initiate a Josh instance.' });
@@ -69,9 +67,33 @@ class Josh {
                 identifier: Josh.Identifiers.InvalidProvider,
                 message: 'The "provider" option must extend the exported "JoshProvider" class.'
             });
-        this.middlewares = new MiddlewareStore_1.MiddlewareStore({ instance: this })
-            .registerPath(middlewareDirectory ?? (0, path_1.join)((0, pieces_1.getRootData)().root, 'middlewares', this.name))
-            .registerPath((0, path_1.join)(__dirname, '..', '..', 'middlewares'));
+        this.middlewares = new MiddlewareStore_1.MiddlewareStore({ instance: this });
+    }
+    /**
+     * The initialization method for Josh.
+     * @since 2.0.0
+     * @returns The {@link Josh} instance
+     *
+     * @example
+     * ```typescript
+     * await josh.init();
+     * ```
+     */
+    async init() {
+        const context = await this.provider.init({ name: this.name, instance: this });
+        if (context.error)
+            throw context.error;
+        return this;
+    }
+    /**
+     * Adds a middleware instance to this Josh.
+     * @since 2.0.0
+     * @param instance The instance to add.
+     * @returns This Josh class.
+     */
+    use(instance) {
+        this.middlewares.set(instance.name, instance);
+        return this;
     }
     /**
      * Generate an automatic key. Generally an integer incremented by `1`, but depends on provider.
@@ -89,7 +111,7 @@ class Josh {
         let payload = { method: types_1.Method.AutoKey, trigger: types_1.Trigger.PreProvider, data: '' };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.AutoKey))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.AutoKey))
             payload = await middleware[types_1.Method.AutoKey](payload);
         payload = await this.provider[types_1.Method.AutoKey](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -97,7 +119,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.AutoKey))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.AutoKey))
             payload = await middleware[types_1.Method.AutoKey](payload);
         return payload.data;
     }
@@ -105,7 +127,7 @@ class Josh {
         let payload = { method: types_1.Method.Clear, trigger: types_1.Trigger.PreProvider };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Clear))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Clear))
             payload = await middleware[types_1.Method.Clear](payload);
         payload = await this.provider[types_1.Method.Clear](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -113,7 +135,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Clear))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Clear))
             payload = await middleware[types_1.Method.Clear](payload);
         return this;
     }
@@ -137,7 +159,7 @@ class Josh {
         let payload = { method: types_1.Method.Dec, trigger: types_1.Trigger.PreProvider, key, path };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Dec))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Dec))
             payload = await middleware[types_1.Method.Dec](payload);
         payload = await this.provider[types_1.Method.Dec](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -145,7 +167,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Dec))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Dec))
             payload = await middleware[types_1.Method.Dec](payload);
         return this;
     }
@@ -178,7 +200,7 @@ class Josh {
         let payload = { method: types_1.Method.Delete, trigger: types_1.Trigger.PreProvider, key, path };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Delete))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Delete))
             payload = await middleware[types_1.Method.Delete](payload);
         payload = await this.provider[types_1.Method.Delete](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -186,7 +208,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Delete))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Delete))
             payload = await middleware[types_1.Method.Delete](payload);
         return this;
     }
@@ -213,7 +235,7 @@ class Josh {
         let payload = { method: types_1.Method.Ensure, trigger: types_1.Trigger.PreProvider, key, defaultValue, data: defaultValue };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Ensure))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Ensure))
             payload = await middleware[types_1.Method.Ensure](payload);
         payload = await this.provider[types_1.Method.Ensure](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -221,7 +243,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Ensure))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Ensure))
             payload = await middleware[types_1.Method.Ensure](payload);
         return payload.data;
     }
@@ -246,7 +268,7 @@ class Josh {
         }
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Every))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Every))
             payload = await middleware[types_1.Method.Every](payload);
         payload = await this.provider[types_1.Method.Every](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -254,7 +276,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Every))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Every))
             payload = await middleware[types_1.Method.Every](payload);
         return payload.data;
     }
@@ -279,7 +301,7 @@ class Josh {
         }
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Filter))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Filter))
             payload = await middleware[types_1.Method.Filter](payload);
         payload = await this.provider[types_1.Method.Filter](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -287,7 +309,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Filter))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Filter))
             payload = await middleware[types_1.Method.Filter](payload);
         return this.convertBulkData(payload.data, returnBulkType);
     }
@@ -311,7 +333,7 @@ class Josh {
         }
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Find))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Find))
             payload = await middleware[types_1.Method.Find](payload);
         payload = await this.provider[types_1.Method.Find](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -319,7 +341,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Find))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Find))
             payload = await middleware[types_1.Method.Find](payload);
         return payload.data ?? null;
     }
@@ -328,7 +350,7 @@ class Josh {
         let payload = { method: types_1.Method.Get, trigger: types_1.Trigger.PreProvider, key, path };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Get))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Get))
             payload = await middleware[types_1.Method.Get](payload);
         payload = await this.provider.get(payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -336,7 +358,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Get))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Get))
             payload = await middleware[types_1.Method.Get](payload);
         return payload.data ?? null;
     }
@@ -368,7 +390,7 @@ class Josh {
         let payload = { method: types_1.Method.GetAll, trigger: types_1.Trigger.PreProvider, data: {} };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.GetAll))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.GetAll))
             payload = await middleware[types_1.Method.GetAll](payload);
         payload = await this.provider.getAll(payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -376,7 +398,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.GetAll))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.GetAll))
             payload = await middleware[types_1.Method.GetAll](payload);
         return this.convertBulkData(payload.data, returnBulkType);
     }
@@ -400,7 +422,7 @@ class Josh {
         let payload = { method: types_1.Method.GetMany, trigger: types_1.Trigger.PreProvider, keys, data: {} };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.GetMany))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.GetMany))
             payload = await middleware[types_1.Method.GetMany](payload);
         payload = await this.provider[types_1.Method.GetMany](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -408,7 +430,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.GetMany))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.GetMany))
             payload = await middleware[types_1.Method.GetMany](payload);
         return this.convertBulkData(payload.data, returnBulkType);
     }
@@ -432,7 +454,7 @@ class Josh {
         let payload = { method: types_1.Method.Has, trigger: types_1.Trigger.PreProvider, key, path, data: false };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Has))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Has))
             payload = await middleware[types_1.Method.Has](payload);
         payload = await this.provider.has(payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -440,7 +462,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Has))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Has))
             payload = await middleware[types_1.Method.Has](payload);
         return payload.data;
     }
@@ -464,7 +486,7 @@ class Josh {
         let payload = { method: types_1.Method.Inc, trigger: types_1.Trigger.PreProvider, key, path };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Inc))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Inc))
             payload = await middleware[types_1.Method.Inc](payload);
         payload = await this.provider.inc(payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -472,7 +494,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Inc))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Inc))
             payload = await middleware[types_1.Method.Inc](payload);
         return this;
     }
@@ -492,7 +514,7 @@ class Josh {
         let payload = { method: types_1.Method.Keys, trigger: types_1.Trigger.PreProvider, data: [] };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Keys))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Keys))
             payload = await middleware[types_1.Method.Keys](payload);
         payload = await this.provider.keys(payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -500,7 +522,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Keys))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Keys))
             payload = await middleware[types_1.Method.Keys](payload);
         return payload.data;
     }
@@ -537,7 +559,7 @@ class Josh {
             payload.path = pathOrHook;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Map))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Map))
             payload = await middleware[types_1.Method.Map](payload);
         payload = await this.provider[types_1.Method.Map](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -545,7 +567,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Map))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Map))
             payload = await middleware[types_1.Method.Map](payload);
         return payload.data;
     }
@@ -554,7 +576,7 @@ class Josh {
         let payload = { method: types_1.Method.Math, trigger: types_1.Trigger.PreProvider, key, path, operator, operand };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Math))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Math))
             payload = await middleware[types_1.Method.Math](payload);
         payload = await this.provider[types_1.Method.Math](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -562,7 +584,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Math))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Math))
             payload = await middleware[types_1.Method.Math](payload);
         return this;
     }
@@ -587,7 +609,7 @@ class Josh {
         }
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Partition))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Partition))
             payload = await middleware[types_1.Method.Partition](payload);
         payload = await this.provider[types_1.Method.Partition](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -595,7 +617,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Partition))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Partition))
             payload = await middleware[types_1.Method.Partition](payload);
         const { truthy, falsy } = payload.data;
         return [this.convertBulkData(truthy, returnBulkType), this.convertBulkData(falsy, returnBulkType)];
@@ -621,7 +643,7 @@ class Josh {
         let payload = { method: types_1.Method.Push, trigger: types_1.Trigger.PreProvider, key, path, value };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Push))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Push))
             payload = await middleware[types_1.Method.Push](payload);
         payload = await this.provider[types_1.Method.Push](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -629,7 +651,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Push))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Push))
             payload = await middleware[types_1.Method.Push](payload);
         return this;
     }
@@ -642,7 +664,7 @@ class Josh {
         let payload = { method: types_1.Method.Random, trigger: types_1.Trigger.PreProvider };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Random))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Random))
             payload = await middleware[types_1.Method.Random](payload);
         payload = await this.provider[types_1.Method.Random](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -650,7 +672,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Random))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Random))
             payload = await middleware[types_1.Method.Random](payload);
         return payload.data ?? null;
     }
@@ -663,7 +685,7 @@ class Josh {
         let payload = { method: types_1.Method.RandomKey, trigger: types_1.Trigger.PreProvider };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.RandomKey))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.RandomKey))
             payload = await middleware[types_1.Method.RandomKey](payload);
         payload = await this.provider.randomKey(payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -671,7 +693,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.RandomKey))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.RandomKey))
             payload = await middleware[types_1.Method.RandomKey](payload);
         return payload.data ?? null;
     }
@@ -694,7 +716,7 @@ class Josh {
             payload.value = valueOrHook;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Remove))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Remove))
             payload = await middleware[types_1.Method.Remove](payload);
         payload = await this.provider[types_1.Method.Remove](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -702,7 +724,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Remove))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Remove))
             payload = await middleware[types_1.Method.Remove](payload);
         return this;
     }
@@ -711,7 +733,7 @@ class Josh {
         let payload = { method: types_1.Method.Set, trigger: types_1.Trigger.PreProvider, key, path, value };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Set))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Set))
             payload = await middleware[types_1.Method.Set](payload);
         payload = await this.provider[types_1.Method.Set](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -719,7 +741,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Set))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Set))
             payload = await middleware[types_1.Method.Set](payload);
         return this;
     }
@@ -741,7 +763,7 @@ class Josh {
         let payload = { method: types_1.Method.SetMany, trigger: types_1.Trigger.PreProvider, keys, value };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.SetMany))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.SetMany))
             payload = await middleware[types_1.Method.SetMany](payload);
         payload = await this.provider[types_1.Method.SetMany](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -749,7 +771,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.SetMany))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.SetMany))
             payload = await middleware[types_1.Method.SetMany](payload);
         return this;
     }
@@ -767,7 +789,7 @@ class Josh {
         let payload = { method: types_1.Method.Size, trigger: types_1.Trigger.PreProvider, data: 0 };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Size))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Size))
             payload = await middleware[types_1.Method.Size](payload);
         payload = await this.provider[types_1.Method.Size](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -775,7 +797,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Size))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Size))
             payload = await middleware[types_1.Method.Size](payload);
         return payload.data;
     }
@@ -800,7 +822,7 @@ class Josh {
         }
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Some))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Some))
             payload = await middleware[types_1.Method.Some](payload);
         payload = await this.provider[types_1.Method.Some](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -808,7 +830,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Some))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Some))
             payload = await middleware[types_1.Method.Some](payload);
         return payload.data;
     }
@@ -830,7 +852,7 @@ class Josh {
         let payload = { method: types_1.Method.Update, trigger: types_1.Trigger.PreProvider, key, path, hook };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Update))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Update))
             payload = await middleware[types_1.Method.Update](payload);
         payload = await this.provider[types_1.Method.Update](payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -838,7 +860,7 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Update))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Update))
             payload = await middleware[types_1.Method.Update](payload);
         return payload.data ?? null;
     }
@@ -859,7 +881,7 @@ class Josh {
         let payload = { method: types_1.Method.Values, trigger: types_1.Trigger.PreProvider, data: [] };
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPreMiddlewares(types_1.Method.Values))
+        for (const middleware of this.middlewares.getPreMiddlewares(types_1.Method.Values))
             payload = await middleware[types_1.Method.Values](payload);
         payload = await this.provider.values(payload);
         payload.trigger = types_1.Trigger.PostProvider;
@@ -867,39 +889,9 @@ class Josh {
             throw payload.error;
         for (const middleware of this.middlewares.array())
             await middleware.run(payload);
-        for (const middleware of this.getPostMiddlewares(types_1.Method.Values))
+        for (const middleware of this.middlewares.getPostMiddlewares(types_1.Method.Values))
             payload = await middleware[types_1.Method.Values](payload);
         return payload.data;
-    }
-    /**
-     * The initialization method for Josh.
-     * @since 2.0.0
-     * @returns The {@link Josh} instance
-     *
-     * @example
-     * ```typescript
-     * await josh.init();
-     * ```
-     */
-    async init() {
-        await this.middlewares.loadAll();
-        const context = await this.provider.init({ name: this.name, instance: this });
-        if (context.error)
-            throw context.error;
-        return this;
-    }
-    /**
-     * Enables a middleware that was not enabled by default.
-     * @since 2.0.0
-     * @param name The name of the middleware to enable.
-     */
-    use(name) {
-        const middleware = this.middlewares.get(name);
-        if (!middleware)
-            throw new errors_1.JoshError({ identifier: Josh.Identifiers.MiddlewareNotFound, message: `The middleware "${name}" does not exist.` });
-        middleware.use = true;
-        this.middlewares.set(name, middleware);
-        return this;
     }
     /** A private method for converting bulk data.
      * @since 2.0.0
@@ -930,23 +922,6 @@ class Josh {
      */
     getKeyPath(keyPath) {
         return typeof keyPath === 'string' ? [keyPath, []] : [keyPath[0], keyPath[1] ?? []];
-    }
-    /**
-     * Filters pre-provider middlewares by a method.
-     * @since 2.0.0
-     * @param method The method to filter by.
-     * @returns The filtered middlewares.
-     */
-    getPreMiddlewares(method) {
-        return this.middlewares.filterByCondition(method, types_1.Trigger.PreProvider);
-    }
-    /**
-     * Filters post-provider middlewares by a method.
-     * @param method The method to filter by.
-     * @returns The filtered middlewares.
-     */
-    getPostMiddlewares(method) {
-        return this.middlewares.filterByCondition(method, types_1.Trigger.PostProvider);
     }
     /**
      * A static method to create multiple instances of {@link Josh}.

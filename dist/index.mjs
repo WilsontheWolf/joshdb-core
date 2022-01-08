@@ -1,7 +1,7 @@
 import mod from "./index.js";
 
 export default mod;
-export const ApplyOptions = mod.ApplyOptions;
+export const ApplyMiddlewareOptions = mod.ApplyMiddlewareOptions;
 export const BuiltInMiddleware = mod.BuiltInMiddleware;
 export const Bulk = mod.Bulk;
 export const Josh = mod.Josh;
