@@ -2290,6 +2290,9 @@ declare namespace JoshProvider {
          */
         error?: JoshProviderError;
     }
+    interface Constructor<StoredValue = unknown> {
+        new (options: Options): JoshProvider<StoredValue>;
+    }
     enum Identifiers {
         DecMissingData = "decMissingData",
         DecInvalidType = "decInvalidType",
