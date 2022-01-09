@@ -45,21 +45,21 @@ class JoshProvider {
 }
 exports.JoshProvider = JoshProvider;
 (function (JoshProvider) {
-    let Identifiers;
-    (function (Identifiers) {
-        Identifiers["DecMissingData"] = "decMissingData";
-        Identifiers["DecInvalidType"] = "decInvalidType";
-        Identifiers["FilterInvalidValue"] = "filterInvalidValue";
-        Identifiers["FindInvalidValue"] = "findInvalidValue";
-        Identifiers["IncInvalidType"] = "incInvalidType";
-        Identifiers["IncMissingData"] = "incMissingData";
-        Identifiers["MathInvalidType"] = "mathInvalidType";
-        Identifiers["MathMissingData"] = "mathMissingData";
-        Identifiers["PartitionInvalidValue"] = "partitionInvalidValue";
-        Identifiers["PushInvalidType"] = "pushInvalidType";
-        Identifiers["PushMissingData"] = "pushMissingData";
-        Identifiers["RemoveInvalidType"] = "removeInvalidType";
-        Identifiers["RemoveMissingData"] = "removeMissingData";
-    })(Identifiers = JoshProvider.Identifiers || (JoshProvider.Identifiers = {}));
+    let CommonIdentifiers;
+    (function (CommonIdentifiers) {
+        CommonIdentifiers["DecMissingData"] = "decMissingData";
+        CommonIdentifiers["DecInvalidType"] = "decInvalidType";
+        CommonIdentifiers["FilterInvalidValue"] = "filterInvalidValue";
+        CommonIdentifiers["FindInvalidValue"] = "findInvalidValue";
+        CommonIdentifiers["IncInvalidType"] = "incInvalidType";
+        CommonIdentifiers["IncMissingData"] = "incMissingData";
+        CommonIdentifiers["MathInvalidType"] = "mathInvalidType";
+        CommonIdentifiers["MathMissingData"] = "mathMissingData";
+        CommonIdentifiers["PartitionInvalidValue"] = "partitionInvalidValue";
+        CommonIdentifiers["PushInvalidType"] = "pushInvalidType";
+        CommonIdentifiers["PushMissingData"] = "pushMissingData";
+        CommonIdentifiers["RemoveInvalidType"] = "removeInvalidType";
+        CommonIdentifiers["RemoveMissingData"] = "removeMissingData";
+    })(CommonIdentifiers = JoshProvider.CommonIdentifiers || (JoshProvider.CommonIdentifiers = {}));
 })(JoshProvider = exports.JoshProvider || (exports.JoshProvider = {}));
 //# sourceMappingURL=JoshProvider.js.map
