@@ -44,4 +44,22 @@ class JoshProvider {
     }
 }
 exports.JoshProvider = JoshProvider;
+(function (JoshProvider) {
+    let Identifiers;
+    (function (Identifiers) {
+        Identifiers["DecMissingData"] = "decMissingData";
+        Identifiers["DecInvalidType"] = "decInvalidType";
+        Identifiers["FilterInvalidValue"] = "filterInvalidValue";
+        Identifiers["FindInvalidValue"] = "findInvalidValue";
+        Identifiers["IncInvalidType"] = "incInvalidType";
+        Identifiers["IncMissingData"] = "incMissingData";
+        Identifiers["MathInvalidType"] = "mathInvalidType";
+        Identifiers["MathMissingData"] = "mathMissingData";
+        Identifiers["PartitionInvalidValue"] = "partitionInvalidValue";
+        Identifiers["PushInvalidType"] = "pushInvalidType";
+        Identifiers["PushMissingData"] = "pushMissingData";
+        Identifiers["RemoveInvalidType"] = "removeInvalidType";
+        Identifiers["RemoveMissingData"] = "removeMissingData";
+    })(Identifiers = JoshProvider.Identifiers || (JoshProvider.Identifiers = {}));
+})(JoshProvider = exports.JoshProvider || (exports.JoshProvider = {}));
 //# sourceMappingURL=JoshProvider.js.map

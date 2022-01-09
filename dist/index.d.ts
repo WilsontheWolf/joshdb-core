@@ -2290,6 +2290,21 @@ declare namespace JoshProvider {
          */
         error?: JoshProviderError;
     }
+    enum Identifiers {
+        DecMissingData = "decMissingData",
+        DecInvalidType = "decInvalidType",
+        FilterInvalidValue = "filterInvalidValue",
+        FindInvalidValue = "findInvalidValue",
+        IncInvalidType = "incInvalidType",
+        IncMissingData = "incMissingData",
+        MathInvalidType = "mathInvalidType",
+        MathMissingData = "mathMissingData",
+        PartitionInvalidValue = "partitionInvalidValue",
+        PushInvalidType = "pushInvalidType",
+        PushMissingData = "pushMissingData",
+        RemoveInvalidType = "removeInvalidType",
+        RemoveMissingData = "removeMissingData"
+    }
 }
 
 /**
@@ -2342,23 +2357,6 @@ declare class MapProvider<StoredValue = unknown> extends JoshProvider<StoredValu
     [Method.Some](payload: SomeByValuePayload): Promise<SomeByValuePayload>;
     [Method.Update]<HookValue = StoredValue, Value = HookValue>(payload: UpdatePayload<StoredValue, HookValue, Value>): Promise<UpdatePayload<StoredValue, HookValue, Value>>;
     [Method.Values](payload: ValuesPayload<StoredValue>): ValuesPayload<StoredValue>;
-}
-declare namespace MapProvider {
-    enum Identifiers {
-        DecInvalidType = "decInvalidType",
-        DecMissingData = "decMissingData",
-        FilterInvalidValue = "filterInvalidValue",
-        FindInvalidValue = "findInvalidValue",
-        IncInvalidType = "incInvalidType",
-        IncMissingData = "incMissingData",
-        MathInvalidType = "mathInvalidType",
-        MathMissingData = "mathMissingData",
-        PartitionInvalidValue = "partitionInvalidValue",
-        PushInvalidType = "pushInvalidType",
-        PushMissingData = "pushMissingData",
-        RemoveInvalidType = "removeInvalidType",
-        RemoveMissingData = "removeMissingData"
-    }
 }
 
 /**
